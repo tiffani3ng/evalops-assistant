@@ -1,0 +1,42 @@
+[
+  {
+    "id": "latency",
+    "label": "Slow / high latency",
+    "keywords": ["slow", "takes too long", "waiting", "latency", "speed", "fast"]
+  },
+  {
+    "id": "low_trust",
+    "label": "Low trust in outputs",
+    "keywords": ["trust", "believe", "reliable", "confident", "doubt", "skeptical"]
+  },
+  {
+    "id": "irrelevant_results",
+    "label": "Irrelevant or off-topic results",
+    "keywords": ["irrelevant", "off-topic", "wrong results", "not what I asked", "unrelated"]
+  },
+  {
+    "id": "information_overload",
+    "label": "Too much information / poor organization",
+    "keywords": ["too much", "overwhelming", "cluttered", "organized", "noisy", "messy"]
+  },
+  {
+    "id": "hard_to_verify",
+    "label": "Difficult to verify or trace sources",
+    "keywords": ["verify", "source", "check", "trace", "cite", "where did this come from"]
+  },
+  {
+    "id": "poor_coherence",
+    "label": "Incoherent or confusing output",
+    "keywords": ["confusing", "incoherent", "doesn't make sense", "unclear", "jumbled"]
+  },
+  {
+    "id": "low_accuracy",
+    "label": "Incorrect or hallucinated answers",
+    "keywords": ["wrong", "incorrect", "hallucinate", "made up", "inaccurate", "error"]
+  },
+  {
+    "id": "poor_usability",
+    "label": "Hard to use / poor UX",
+    "keywords": ["hard to use", "confusing UI", "interface", "clunky", "UX", "navigate"]
+  }
+]

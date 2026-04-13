@@ -1,0 +1,117 @@
+[
+  {
+    "id": "response_time",
+    "label": "Response time",
+    "type": "interaction",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "description": "Time from user request to system response.",
+    "instrumentation": [
+      "Log request start timestamp",
+      "Log response end timestamp",
+      "Compute difference"
+    ],
+    "burden": "low",
+    "source_ids": [4, 5]
+  },
+  {
+    "id": "task_completion_time",
+    "label": "Task completion time",
+    "type": "interaction",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "description": "Total time for a user to complete their analytic task.",
+    "instrumentation": [
+      "Log task start event",
+      "Log task completion event",
+      "Track across sessions if needed"
+    ],
+    "burden": "low",
+    "source_ids": []
+  },
+  {
+    "id": "trust_score",
+    "label": "Trust rating",
+    "type": "survey",
+    "evaluation_mode": "survey",
+    "signal_type": "self_report",
+    "description": "User-reported trust in the system's outputs, typically on a Likert scale.",
+    "instrumentation": [
+      "Add post-task Likert question: 'I trusted this answer'",
+      "Collect after each interaction or session"
+    ],
+    "burden": "moderate",
+    "source_ids": [15, 13]
+  },
+  {
+    "id": "precision",
+    "label": "Precision",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "description": "Proportion of retrieved items that are relevant.",
+    "instrumentation": [
+      "Collect human relevance judgments on retrieved items",
+      "Compute precision = relevant_retrieved / total_retrieved"
+    ],
+    "burden": "low",
+    "source_ids": [4, 5, 6, 7]
+  },
+  {
+    "id": "source_click_rate",
+    "label": "Source-click rate",
+    "type": "interaction",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "description": "How often users click through to view the original source cited by the AI.",
+    "instrumentation": [
+      "Log clicks on citation/source links",
+      "Divide by total citations shown"
+    ],
+    "burden": "low",
+    "source_ids": []
+  },
+  {
+    "id": "sus_score",
+    "label": "System Usability Scale (SUS)",
+    "type": "survey",
+    "evaluation_mode": "survey",
+    "signal_type": "self_report",
+    "description": "Standardized 10-item questionnaire measuring perceived usability.",
+    "instrumentation": [
+      "Administer SUS questionnaire after user session",
+      "Score using standard SUS formula"
+    ],
+    "burden": "moderate",
+    "source_ids": [13, 15]
+  },
+  {
+    "id": "nasa_tlx",
+    "label": "NASA-TLX",
+    "type": "survey",
+    "evaluation_mode": "survey",
+    "signal_type": "self_report",
+    "description": "Multidimensional self-report measure of perceived workload.",
+    "instrumentation": [
+      "Administer NASA-TLX questionnaire post-task",
+      "Compute composite or subscale scores"
+    ],
+    "burden": "moderate",
+    "source_ids": [15, 13, 17]
+  },
+  {
+    "id": "hallucination_rate",
+    "label": "Hallucination rate",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "description": "Proportion of AI-generated claims that are unsupported or fabricated.",
+    "instrumentation": [
+      "Sample AI outputs",
+      "Human or automated fact-checking against source documents",
+      "Count unsupported claims / total claims"
+    ],
+    "burden": "moderate",
+    "source_ids": [5, 6, 7]
+  }
+]

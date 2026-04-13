@@ -1,0 +1,21 @@
+{
+  "task_to_metrics": {
+    "ad_hoc_info_gathering": ["precision", "response_time", "task_completion_time", "source_click_rate"],
+    "factual_qa": ["precision", "response_time", "task_completion_time", "hallucination_rate", "trust_score"],
+    "verification": ["source_click_rate", "hallucination_rate", "trust_score", "task_completion_time"],
+    "report_drafting": ["task_completion_time", "trust_score", "nasa_tlx"],
+    "triage_classification": ["precision", "task_completion_time", "sus_score"],
+    "sensemaking": ["nasa_tlx", "sus_score", "task_completion_time", "trust_score"],
+    "long_term_tracking": ["precision", "task_completion_time", "sus_score"]
+  },
+  "problem_to_metrics": {
+    "latency": ["response_time", "task_completion_time"],
+    "low_trust": ["trust_score", "source_click_rate", "hallucination_rate"],
+    "irrelevant_results": ["precision", "task_completion_time"],
+    "information_overload": ["nasa_tlx", "sus_score", "task_completion_time"],
+    "hard_to_verify": ["source_click_rate", "hallucination_rate", "trust_score"],
+    "poor_coherence": ["sus_score", "nasa_tlx"],
+    "low_accuracy": ["precision", "hallucination_rate", "trust_score"],
+    "poor_usability": ["sus_score", "nasa_tlx", "task_completion_time"]
+  }
+}

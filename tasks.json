@@ -1,0 +1,44 @@
+[
+  {
+    "id": "ad_hoc_info_gathering",
+    "label": "Ad hoc information gathering / document search",
+    "description": "User searches for specific information across documents or a corpus, without a pre-defined query plan.",
+    "keywords": ["search", "find", "look up", "retrieve", "document"]
+  },
+  {
+    "id": "long_term_tracking",
+    "label": "Long-term information tracking / keeping up to date",
+    "description": "Monitoring a topic, entity, or situation over time for changes or updates.",
+    "keywords": ["monitor", "track", "update", "change", "over time"]
+  },
+  {
+    "id": "triage_classification",
+    "label": "Triage / filtering / classification",
+    "description": "Sorting, prioritizing, or categorizing items based on criteria.",
+    "keywords": ["sort", "filter", "classify", "prioritize", "triage", "categorize"]
+  },
+  {
+    "id": "sensemaking",
+    "label": "Reading / learning / sensemaking",
+    "description": "Understanding, synthesizing, or making sense of complex information.",
+    "keywords": ["understand", "learn", "synthesize", "make sense", "confusing", "complex"]
+  },
+  {
+    "id": "factual_qa",
+    "label": "Factual question answering",
+    "description": "Answering who/where/when questions with specific factual responses.",
+    "keywords": ["answer", "question", "who", "where", "when", "fact", "correct", "wrong"]
+  },
+  {
+    "id": "report_drafting",
+    "label": "Long-form drafting / report generation",
+    "description": "Producing extended written outputs like reports, summaries, or analyses.",
+    "keywords": ["write", "draft", "report", "generate", "summary", "output"]
+  },
+  {
+    "id": "verification",
+    "label": "Information verification / grounding",
+    "description": "Checking whether AI-generated content is accurate, sourced, and trustworthy.",
+    "keywords": ["verify", "check", "trust", "source", "accurate", "hallucinate", "grounded"]
+  }
+]

@@ -1,0 +1,82 @@
+import streamlit as st
+from llm_utils import classify_feedback
+from prompts import load_json, get_recommendations, apply_sanity_rules
+
+
+# incredibly basic UI, has feedback box, click analyze, gives a basic list of interpretation and recommended metrics
+# SO FUGLY!!!
+
+### extension 1: allow multiple inputs.
+            ### 1. stakeholder feedback
+            ### 2. optional: model context (what does it do, what setting is it meant for)
+            ### 3. optional: stakeholder context (what are they trying to do, what is the end goal, what is the info used for)
+
+### extension 2: a more dynamic page
+            ### a text loading animation hehe
+            ### interpretation and allow them to edit it and have the AI re-evaluate based on edits
+            ### allow clickable literature sources with titles and links
+
+# Load knowledge base
+tasks = load_json("tasks.json")
+problems = load_json("problems.json")
+metrics = load_json("metrics.json")
+mappings = load_json("mappings.json")
+
+st.title("EvalOps Benchmarking Assistant")
+st.caption("Powered by Claude.")
+
+feedback = st.text_area(
+    "Stakeholder feedback:",
+    placeholder="e.g. 'This chatbot takes too long to respond and I don't trust the answers.'",
+    height=120
+)
+
+if st.button("Analyze", type="primary"):
+    if not feedback.strip():
+        st.warning("Please enter some feedback.")
+    else:
+        with st.spinner("Analyzing feedback with Claude..."): ### no ew change as text loading animation
+            # 1: Claude classifies feedback
+            classification = classify_feedback(feedback, tasks, problems)
+        
+        # 2: Python looks up metrics
+        recommended = get_recommendations(
+            classification["task_labels"],
+            classification["problem_labels"],
+            metrics, mappings
+        )
+        
+        # 3: sanity rules
+        recommended = apply_sanity_rules(
+            classification["task_labels"],
+            classification["problem_labels"],
+            recommended, metrics
+        )
+        
+        # 4: results
+        st.subheader("Interpretation")
+        
+        task_map = {t["id"]: t["label"] for t in tasks}
+        problem_map = {p["id"]: p["label"] for p in problems}
+        
+        st.markdown("**Likely tasks:**")
+        for t in classification["task_labels"]:
+            st.markdown(f"- {task_map.get(t, t)}")
+        
+        st.markdown("**Likely issues:**")
+        for p in classification["problem_labels"]:
+            st.markdown(f"- {problem_map.get(p, p)}")
+        
+        st.markdown(f"**Summary:** {classification['summary']}")
+        
+        st.divider()
+        st.subheader("Recommended Metrics")
+        
+        for m in recommended:
+            with st.expander(f"{m['label']}  ({m['type']}, {m['evaluation_mode']})"):
+                st.write(m["description"])
+                st.markdown("**How to instrument:**")
+                for step in m["instrumentation"]:
+                    st.markdown(f"- {step}")
+                if m.get("source_ids"):
+                    st.caption(f"Literature sources: {m['source_ids']}")
