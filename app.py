@@ -1,13 +1,13 @@
 import streamlit as st
-from llm_utils import classify_feedback
+from llm_utils import classify_feedback, generate_bundle_explanation
 from prompts import load_json, get_recommendations, apply_sanity_rules
 
 
 # incredibly basic UI, has feedback box, click analyze, gives a basic list of interpretation and recommended metrics
 # SO FUGLY!!!
 
-### extension 1: allow multiple inputs.
-            ### 1. stakeholder feedback
+### extension 1: allow multiple inputs in app.py
+            ### 1. stakeholder feedback (existing)
             ### 2. optional: model context (what does it do, what setting is it meant for)
             ### 3. optional: stakeholder context (what are they trying to do, what is the end goal, what is the info used for)
 
@@ -31,29 +31,48 @@ feedback = st.text_area(
     height=120
 )
 
+with st.expander("Optional context"):
+    model_context = st.text_area(
+        "Model context:", 
+        placeholder="e.g. 'A customer support chatbot for a SaaS product, used by non-technical end users.'", 
+        height=80
+    )
+    stakeholder_context = st.text_area(
+        "Stakeholder context:",
+        placeholder="e.g. 'A product manager reviewing weekly support escalations to decide which issues to prioritize.",
+        height=80
+    )
+
 if st.button("Analyze", type="primary"):
     if not feedback.strip():
         st.warning("Please enter some feedback.")
     else:
-        with st.spinner("Analyzing feedback with Claude..."): ### no ew change as text loading animation
-            # 1: Claude classifies feedback
-            classification = classify_feedback(feedback, tasks, problems)
+        with st.spinner("Analyzing feedback with Claude..."): ### NOOO change as text loading animation
+            # Step 1: Claude classifies the feedback
+            classification = classify_feedback(
+                feedback, tasks, problems,
+                model_context = model_context.strip() or None,
+                stakeholder_context=stakeholder_context.strip() or None,
+                )
         
-        # 2: Python looks up metrics
+        # Step 2: Python looks up metrics
         recommended = get_recommendations(
             classification["task_labels"],
             classification["problem_labels"],
             metrics, mappings
         )
         
-        # 3: sanity rules
+        # Step 3: Apply sanity rules
         recommended = apply_sanity_rules(
             classification["task_labels"],
             classification["problem_labels"],
             recommended, metrics
         )
-        
-        # 4: results
+
+        # Step 4: Claude explains why this bundle addresses the stakeholder's concerns
+        bundle_explanation = generate_bundle_explanation(feedback, classification, recommended)
+
+        # Step 5: Display results
         st.subheader("Interpretation")
         
         task_map = {t["id"]: t["label"] for t in tasks}
@@ -68,9 +87,10 @@ if st.button("Analyze", type="primary"):
             st.markdown(f"- {problem_map.get(p, p)}")
         
         st.markdown(f"**Summary:** {classification['summary']}")
-        
+
         st.divider()
         st.subheader("Recommended Metrics")
+        st.info(bundle_explanation)
         
         for m in recommended:
             with st.expander(f"{m['label']}  ({m['type']}, {m['evaluation_mode']})"):

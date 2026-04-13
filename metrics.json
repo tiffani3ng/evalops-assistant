@@ -1,75 +1,274 @@
 [
   {
-    "id": "response_time",
-    "label": "Response time",
-    "type": "interaction",
-    "evaluation_mode": "online",
-    "signal_type": "implicit_behavior",
-    "description": "Time from user request to system response.",
-    "instrumentation": [
-      "Log request start timestamp",
-      "Log response end timestamp",
-      "Compute difference"
-    ],
-    "burden": "low",
-    "source_ids": [4, 5]
-  },
-  {
-    "id": "task_completion_time",
-    "label": "Task completion time",
-    "type": "interaction",
-    "evaluation_mode": "online",
-    "signal_type": "implicit_behavior",
-    "description": "Total time for a user to complete their analytic task.",
-    "instrumentation": [
-      "Log task start event",
-      "Log task completion event",
-      "Track across sessions if needed"
-    ],
-    "burden": "low",
-    "source_ids": []
-  },
-  {
-    "id": "trust_score",
-    "label": "Trust rating",
-    "type": "survey",
-    "evaluation_mode": "survey",
-    "signal_type": "self_report",
-    "description": "User-reported trust in the system's outputs, typically on a Likert scale.",
-    "instrumentation": [
-      "Add post-task Likert question: 'I trusted this answer'",
-      "Collect after each interaction or session"
-    ],
-    "burden": "moderate",
-    "source_ids": [15, 13]
-  },
-  {
     "id": "precision",
     "label": "Precision",
     "type": "model",
     "evaluation_mode": "offline",
     "signal_type": "explicit_judgment",
-    "description": "Proportion of retrieved items that are relevant.",
+    "metric_nature": "objective",
+    "description": "The proportion of retrieved items that are relevant.",
+    "formula": "precision = relevant_retrieved / retrieved",
+    "unit": "proportion",
     "instrumentation": [
       "Collect human relevance judgments on retrieved items",
-      "Compute precision = relevant_retrieved / total_retrieved"
+      "Compute precision = relevant_retrieved / total_retrieved",
+      "Often reported at cutoff k (e.g., Precision@10)"
     ],
+    "component_instrumented": "model_output",
     "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Depends on the completeness and quality of relevance judgments; ignores unretrieved relevant items.",
+    "source_ids": [4, 5, 6, 7, 24]
+  },
+  {
+    "id": "recall",
+    "label": "Recall",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "The proportion of all relevant items that are retrieved.",
+    "formula": "recall = relevant_retrieved / total_relevant",
+    "unit": "proportion",
+    "instrumentation": [
+      "Enumerate the full set of relevant items (or a sample)",
+      "Count how many were retrieved by the system",
+      "Compute recall = relevant_retrieved / total_relevant"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "high",
+    "validity_threat": "Hard to estimate when the full relevant set is unknown or incompletely judged.",
+    "source_ids": [4, 5, 6, 7, 24]
+  },
+  {
+    "id": "f1_score",
+    "label": "F1 Score",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Harmonic mean of precision and recall, balancing both in a single score.",
+    "formula": "F1 = 2 * (precision * recall) / (precision + recall)",
+    "unit": "proportion",
+    "instrumentation": [
+      "Compute precision and recall first",
+      "Calculate harmonic mean of both"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Assumes equal importance of precision and recall, which may not match stakeholder priorities.",
+    "source_ids": [24]
+  },
+  {
+    "id": "ndcg",
+    "label": "Normalized Discounted Cumulative Gain (NDCG)",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "A ranking metric that rewards placing highly relevant items near the top, normalized by the ideal ranking.",
+    "formula": "NDCG@k = DCG@k / IDCG@k",
+    "unit": "normalized score",
+    "instrumentation": [
+      "Collect graded relevance judgments for retrieved items",
+      "Compute DCG using position-discounted gains",
+      "Normalize by the ideal DCG (IDCG)"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "high",
+    "validity_threat": "Interpretation depends on gain and discount function choices; requires consistent graded judgments.",
     "source_ids": [4, 5, 6, 7]
   },
   {
-    "id": "source_click_rate",
-    "label": "Source-click rate",
+    "id": "auc_roc",
+    "label": "AUC-ROC",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Area under the receiver operating characteristic curve, measuring the tradeoff between true positive and false positive rates across thresholds.",
+    "formula": "AUC = area under ROC curve (TPR vs FPR)",
+    "unit": "score (0-1)",
+    "instrumentation": [
+      "Collect model predictions with confidence scores",
+      "Compare against ground truth labels",
+      "Compute TPR/FPR at multiple thresholds and integrate"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Can be misleading with highly imbalanced classes.",
+    "source_ids": [24]
+  },
+  {
+    "id": "accuracy",
+    "label": "Task Accuracy / Exact Match",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Proportion of correct answers or exact matches against gold-standard labels across a benchmark.",
+    "formula": "accuracy = correct_predictions / total_predictions",
+    "unit": "proportion",
+    "instrumentation": [
+      "Run model on benchmark dataset with gold labels",
+      "Compare model outputs to reference answers",
+      "Count exact matches or correct classifications"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Depends on benchmark quality and coverage; may not reflect real-world performance.",
+    "source_ids": [4, 5, 6, 7, 22, 26]
+  },
+  {
+    "id": "response_time",
+    "label": "Response Time / Latency",
     "type": "interaction",
     "evaluation_mode": "online",
     "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "Time from user request to system response delivery.",
+    "formula": "response_time = response_timestamp - request_timestamp",
+    "unit": "seconds",
+    "instrumentation": [
+      "Log request start timestamp",
+      "Log response end timestamp",
+      "Compute difference"
+    ],
+    "component_instrumented": "inference_runtime",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "Network latency may confound measurement; varies by query complexity.",
+    "source_ids": [4, 5, 10]
+  },
+  {
+    "id": "task_completion_time",
+    "label": "Task Completion Time",
+    "type": "interaction",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "Total time for a user to complete their analytic task end-to-end.",
+    "formula": "task_completion_time = task_end_timestamp - task_start_timestamp",
+    "unit": "seconds",
+    "instrumentation": [
+      "Log task start event",
+      "Log task completion event",
+      "Track across sessions if needed"
+    ],
+    "component_instrumented": "interface",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "Interruptions and multitasking can inflate times; task boundaries may be ambiguous.",
+    "source_ids": []
+  },
+  {
+    "id": "time_to_first_click",
+    "label": "Time to First Click",
+    "type": "interaction",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "Time elapsed between presenting search results and the user's first click on a result.",
+    "formula": "first_click_timestamp - results_impression_timestamp",
+    "unit": "seconds",
+    "instrumentation": [
+      "Log timestamp when results are displayed",
+      "Log timestamp of first user click on a result",
+      "Compute difference"
+    ],
+    "component_instrumented": "interface",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "May reflect reading strategy, hesitation, or task difficulty rather than result quality alone.",
+    "source_ids": []
+  },
+  {
+    "id": "dwell_time",
+    "label": "Clicked Result Dwell Time",
+    "type": "interaction",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "The amount of time a user spends viewing a clicked result before returning.",
+    "formula": "return_or_end_timestamp - click_timestamp",
+    "unit": "seconds",
+    "instrumentation": [
+      "Log timestamp when user clicks a result",
+      "Log timestamp when user returns or ends session",
+      "Compute difference"
+    ],
+    "component_instrumented": "interface",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "Long dwell time can indicate engagement or confusion; short dwell can indicate success or dissatisfaction.",
+    "source_ids": []
+  },
+  {
+    "id": "source_click_rate",
+    "label": "Source-Click Rate",
+    "type": "interaction",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
     "description": "How often users click through to view the original source cited by the AI.",
+    "formula": "source_click_rate = source_clicks / total_citations_shown",
+    "unit": "proportion",
     "instrumentation": [
       "Log clicks on citation/source links",
-      "Divide by total citations shown"
+      "Log total number of citations displayed",
+      "Divide clicks by citations shown"
     ],
+    "component_instrumented": "interface",
     "burden": "low",
+    "cost": "low",
+    "validity_threat": "High click rate could mean users need to verify (low trust) or are genuinely interested.",
     "source_ids": []
+  },
+  {
+    "id": "hallucination_rate",
+    "label": "Hallucination Rate",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Proportion of AI-generated claims that are unsupported by source material or fabricated.",
+    "formula": "hallucination_rate = unsupported_claims / total_claims",
+    "unit": "proportion",
+    "instrumentation": [
+      "Sample AI outputs",
+      "Human or automated fact-checking against source documents",
+      "Count unsupported claims / total claims"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "moderate",
+    "cost": "moderate",
+    "validity_threat": "Detection depends on source availability; automated checks may miss subtle hallucinations.",
+    "source_ids": [5, 6, 7]
+  },
+  {
+    "id": "trust_score",
+    "label": "Trust Rating",
+    "type": "survey",
+    "evaluation_mode": "survey",
+    "signal_type": "self_report",
+    "metric_nature": "subjective",
+    "description": "User-reported trust in the system's outputs, typically on a Likert scale.",
+    "unit": "Likert score",
+    "instrumentation": [
+      "Add post-task Likert question: 'I trusted this answer'",
+      "Collect after each interaction or session",
+      "Aggregate across users and tasks"
+    ],
+    "component_instrumented": "human_ai_interaction",
+    "burden": "moderate",
+    "cost": "moderate",
+    "validity_threat": "Susceptible to response bias, social desirability, and timing effects.",
+    "source_ids": [13, 15, 17, 18]
   },
   {
     "id": "sus_score",
@@ -77,41 +276,542 @@
     "type": "survey",
     "evaluation_mode": "survey",
     "signal_type": "self_report",
-    "description": "Standardized 10-item questionnaire measuring perceived usability.",
+    "metric_nature": "subjective",
+    "description": "Standardized 10-item questionnaire measuring perceived usability on a 0–100 scale.",
+    "unit": "questionnaire score (0-100)",
     "instrumentation": [
       "Administer SUS questionnaire after user session",
-      "Score using standard SUS formula"
+      "Score using standard SUS formula",
+      "Compare against known benchmarks (68 = average)"
     ],
+    "component_instrumented": "human_ai_interaction",
     "burden": "moderate",
+    "cost": "moderate",
+    "validity_threat": "May not capture domain-specific usability issues; sensitive to timing of administration.",
     "source_ids": [13, 15]
   },
   {
     "id": "nasa_tlx",
-    "label": "NASA-TLX",
+    "label": "NASA Task Load Index (NASA-TLX)",
     "type": "survey",
     "evaluation_mode": "survey",
     "signal_type": "self_report",
-    "description": "Multidimensional self-report measure of perceived workload.",
+    "metric_nature": "subjective",
+    "description": "Multidimensional self-report measure of perceived workload across six subscales (mental, physical, temporal demand, performance, effort, frustration).",
+    "unit": "questionnaire score",
     "instrumentation": [
       "Administer NASA-TLX questionnaire post-task",
-      "Compute composite or subscale scores"
+      "Compute composite or subscale scores",
+      "Compare across conditions or over time"
     ],
+    "component_instrumented": "human_ai_interaction",
     "burden": "moderate",
-    "source_ids": [15, 13, 17]
+    "cost": "moderate",
+    "validity_threat": "Susceptible to response bias, timing effects, and interruption burden.",
+    "source_ids": [13, 15, 17]
   },
   {
-    "id": "hallucination_rate",
-    "label": "Hallucination rate",
+    "id": "coherence_score",
+    "label": "Coherence and Fluency Score",
     "type": "model",
     "evaluation_mode": "offline",
     "signal_type": "explicit_judgment",
-    "description": "Proportion of AI-generated claims that are unsupported or fabricated.",
+    "metric_nature": "objective",
+    "description": "Automatic linguistic quality scoring of LLM-generated text for coherence, fluency, and readability.",
+    "unit": "score",
     "instrumentation": [
-      "Sample AI outputs",
-      "Human or automated fact-checking against source documents",
-      "Count unsupported claims / total claims"
+      "Collect LLM-generated free text outputs",
+      "Score using automated metrics (BERTScore, ROUGE, BLEU, perplexity)",
+      "Optionally supplement with LLM-as-judge scoring"
     ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Automated scores may not correlate well with human quality judgments; proxy for true coherence.",
+    "source_ids": [4, 6]
+  },
+  {
+    "id": "calibration_error",
+    "label": "Calibration Error (ECE)",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Measures whether model confidence scores match actual correctness rates. A well-calibrated model that says it is 80% confident should be correct 80% of the time.",
+    "formula": "ECE = weighted average of |confidence - accuracy| across bins",
+    "unit": "error score",
+    "instrumentation": [
+      "Collect model predictions with confidence/probability scores",
+      "Bin predictions by confidence level",
+      "Compare average confidence to actual accuracy in each bin"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Requires access to model probabilities/logprobs; bin count and method affect results.",
+    "source_ids": [4, 5, 6]
+  },
+  {
+    "id": "robustness_degradation",
+    "label": "Robustness / Perturbation Degradation",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Measures performance drop when inputs are perturbed (typos, dialect shifts, domain changes, noisy data).",
+    "unit": "performance delta",
+    "instrumentation": [
+      "Create perturbed versions of test inputs (typos, paraphrases, domain shifts)",
+      "Run model on both original and perturbed inputs",
+      "Measure performance drop or recovery"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Robustness is inferred from degradation patterns; perturbation design affects conclusions.",
+    "source_ids": [4, 6, 7, 10, 11, 12]
+  },
+  {
+    "id": "bias_fairness",
+    "label": "Bias / Fairness Score",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Assesses whether the system produces different quality outputs for different demographic groups, using bias benchmarks or counterfactual tests.",
+    "unit": "score or disparity ratio",
+    "instrumentation": [
+      "Run bias benchmarks with counterfactual/paired prompts",
+      "Slice results by demographic group when labels are available",
+      "Compute disparity metrics across groups"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Difficult without demographic labels; bias benchmarks may not capture all real-world biases.",
+    "source_ids": [4, 5, 6, 7, 8]
+  },
+  {
+    "id": "toxicity_safety",
+    "label": "Toxicity / Safety Violation Rate",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Quantifies the rate of harmful, toxic, or unsafe content generated by the model, using safety benchmarks and red-teaming prompts.",
+    "unit": "violation rate",
+    "instrumentation": [
+      "Run red-teaming prompt suites",
+      "Score outputs using toxicity classifiers or human reviewers",
+      "Report violation rates and severity distribution"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Toxicity classifiers have their own biases; red-team prompts may not cover all attack vectors.",
+    "source_ids": [5, 6, 8, 10, 37, 40, 42]
+  },
+  {
+    "id": "jailbreak_resistance",
+    "label": "Jailbreak / Prompt Injection Resistance",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Measures the model's resistance to adversarial prompts that attempt to bypass safety guardrails.",
+    "formula": "attack_success_rate = successful_attacks / total_attack_attempts",
+    "unit": "attack success rate",
+    "instrumentation": [
+      "Run standardized jailbreak/prompt-injection attack suites",
+      "Classify each response as compliant or violated",
+      "Compute attack success rate and severity"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Attack suites evolve rapidly; passing one suite doesn't guarantee robustness to novel attacks.",
+    "source_ids": [8, 10]
+  },
+  {
+    "id": "efficiency_cost",
+    "label": "Efficiency / Cost-Quality Tradeoff",
+    "type": "workflow",
+    "evaluation_mode": "offline",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "Characterizes the tradeoff between model quality and computational cost (latency, throughput, dollar cost, energy).",
+    "unit": "cost per query / tokens per second",
+    "instrumentation": [
+      "Measure latency and throughput per request",
+      "Track token counts and compute costs",
+      "Plot quality vs. cost tradeoff curves across models"
+    ],
+    "component_instrumented": "inference_runtime",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "Hardware differences make direct comparisons difficult; costs change as providers update pricing.",
+    "source_ids": [4, 5, 10, 31, 39]
+  },
+  {
+    "id": "helpfulness_preference",
+    "label": "Helpfulness / Human Preference Rating",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "subjective",
+    "description": "Measures perceived helpfulness via human ratings or pairwise preference comparisons between model outputs.",
+    "unit": "rating or win rate",
+    "instrumentation": [
+      "Collect human ratings on response quality (Likert or rubric)",
+      "Or run pairwise preference comparisons (A vs B)",
+      "Optionally use LLM-based graders as scalable proxy"
+    ],
+    "component_instrumented": "model_output",
     "burden": "moderate",
+    "cost": "moderate",
+    "validity_threat": "Human preference is subjective and variable; LLM-based proxies may have systematic biases.",
+    "source_ids": [5, 6, 9]
+  },
+  {
+    "id": "llm_judge_agreement",
+    "label": "LLM-as-Judge Agreement",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Meta-evaluation metric measuring how well an LLM judge's scores agree with human judgments.",
+    "unit": "correlation coefficient or agreement rate",
+    "instrumentation": [
+      "Collect both LLM judge scores and human annotation scores on same outputs",
+      "Compute correlation (Pearson/Spearman) or agreement statistics",
+      "Analyze failure modes and systematic biases"
+    ],
+    "component_instrumented": "evaluation_pipeline",
+    "burden": "moderate",
+    "cost": "moderate",
+    "validity_threat": "High agreement on one dataset may not transfer; judges may share blind spots with the models they evaluate.",
+    "source_ids": [9, 25]
+  },
+  {
+    "id": "task_success_rate",
+    "label": "Agent Task Success Rate",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Proportion of benchmark episodes where an autonomous agent successfully completes the assigned task end-to-end.",
+    "formula": "success_rate = successful_episodes / total_episodes",
+    "unit": "proportion",
+    "instrumentation": [
+      "Run agent on benchmark task episodes",
+      "Check success/failure using benchmark-defined assertions",
+      "Report pass@1 or pass@k for reliability"
+    ],
+    "component_instrumented": "agent_behavior",
+    "burden": "low",
+    "cost": "high",
+    "validity_threat": "Benchmark tasks may not represent real-world complexity; pass@k masks per-run reliability.",
+    "source_ids": [10, 30, 31, 32]
+  },
+  {
+    "id": "tool_use_correctness",
+    "label": "Tool-Use Correctness",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Measures whether an agent selects the correct tool, provides valid arguments, and executes successfully.",
+    "unit": "proportion correct",
+    "instrumentation": [
+      "Log all tool calls with arguments",
+      "Validate against schemas and ground truth sequences",
+      "Compute selection accuracy, argument correctness, and execution success"
+    ],
+    "component_instrumented": "agent_behavior",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Correct tool selection doesn't guarantee correct task completion; schemas may not cover all valid approaches.",
+    "source_ids": [10, 30, 32]
+  },
+  {
+    "id": "planning_quality",
+    "label": "Planning and Reasoning Quality",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Evaluates step-level correctness and overall plan quality in multi-step agent reasoning, using trace analysis or LLM-as-judge.",
+    "unit": "score",
+    "instrumentation": [
+      "Collect agent action sequences and reasoning traces",
+      "Score using graph-based plan matching or LLM-as-judge",
+      "Evaluate intermediate outputs, not just final result"
+    ],
+    "component_instrumented": "agent_reasoning_trace",
+    "burden": "low",
+    "cost": "high",
+    "validity_threat": "LLM judges are proxies for human judgment; multiple valid plans may exist for a single task.",
+    "source_ids": [10, 30, 31, 32]
+  },
+  {
+    "id": "agent_observability",
+    "label": "Agent Observability / Trace Quality",
+    "type": "workflow",
+    "evaluation_mode": "online",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "Measures the quality and completeness of execution traces logged during agent task execution, supporting debugging and monitoring.",
+    "unit": "completeness score",
+    "instrumentation": [
+      "Log agent execution traces including tool calls and step outputs",
+      "Assess trace completeness and queryability",
+      "Score offline metric coverage from traces"
+    ],
+    "component_instrumented": "agent_reasoning_trace",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "Trace logging may miss internal reasoning steps not explicitly surfaced.",
+    "source_ids": [23]
+  },
+  {
+    "id": "multimodal_grounding",
+    "label": "Multimodal Grounding / Visual Hallucination",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Assesses whether generated text is properly grounded in visual evidence, detecting hallucinated descriptions not supported by the image.",
+    "unit": "grounding accuracy",
+    "instrumentation": [
+      "Collect image-text pairs with generated descriptions",
+      "Score whether text claims are supported by visual content",
+      "Use grounding/hallucination benchmarks or human evaluation"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "moderate",
+    "cost": "high",
+    "validity_threat": "Hallucination labels are often coarse; subtle grounding failures may be missed.",
+    "source_ids": [11, 12]
+  },
+  {
+    "id": "multimodal_accuracy",
+    "label": "Multimodal Understanding Accuracy",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Answer correctness on vision-language benchmarks measuring a model's ability to interpret image-text inputs.",
+    "unit": "accuracy / VQA score",
+    "instrumentation": [
+      "Run model on vision-language benchmark datasets",
+      "Score using accuracy, VQA score, or SPICE",
+      "Compare against baseline models"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Benchmark coverage may not reflect real-world multimodal tasks.",
+    "source_ids": [11, 12]
+  },
+  {
+    "id": "explanation_faithfulness",
+    "label": "Explanation Faithfulness / Fidelity",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Measures whether a post-hoc explanation (feature attributions, saliency maps) accurately reflects the model's actual decision-making process.",
+    "unit": "fidelity score",
+    "instrumentation": [
+      "Perturb or remove features identified as important by the explanation",
+      "Check if model behavior changes as the explanation predicts",
+      "Score using AOPC, sufficiency, or comprehensiveness metrics"
+    ],
+    "component_instrumented": "model_explanation",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Faithfulness tests approximate true reasoning; no test can fully verify explanation correctness.",
+    "source_ids": [1, 14, 16]
+  },
+  {
+    "id": "explanation_usefulness",
+    "label": "Explanation Usefulness / User Trust in Explanations",
+    "type": "survey",
+    "evaluation_mode": "survey",
+    "signal_type": "self_report",
+    "metric_nature": "subjective",
+    "description": "Measures how useful, trustworthy, and actionable users find AI explanations, using questionnaires and task performance.",
+    "unit": "Likert score / task performance",
+    "instrumentation": [
+      "Conduct user studies with explanation interfaces",
+      "Administer trust, perceived utility, and confidence questionnaires",
+      "Measure task performance and decision accuracy with and without explanations"
+    ],
+    "component_instrumented": "human_ai_interaction",
+    "burden": "moderate",
+    "cost": "moderate",
+    "validity_threat": "Trust/workload scales are proxies; users may over-trust or under-trust irrespective of explanation quality.",
+    "source_ids": [13, 15, 17, 18]
+  },
+  {
+    "id": "clinical_decision_accuracy",
+    "label": "Clinical Decision Accuracy with AI",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Measures clinician decision accuracy when using AI-assisted clinical decision support, compared to unassisted decisions.",
+    "unit": "accuracy / diagnostic rate",
+    "instrumentation": [
+      "Conduct controlled clinical study (with/without AI)",
+      "Track clinical decision accuracy and time-to-diagnosis",
+      "Compare outcomes across conditions"
+    ],
+    "component_instrumented": "human_ai_interaction",
+    "burden": "high",
+    "cost": "high",
+    "validity_threat": "Study conditions may not reflect real clinical workflow pressures; ethical constraints limit study design.",
+    "source_ids": [19, 20, 21]
+  },
+  {
+    "id": "implementation_readiness",
+    "label": "Implementation Readiness Score",
+    "type": "workflow",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "subjective",
+    "description": "Framework-based assessment of AI system readiness for real-world deployment, covering capability, utility, workflow fit, and adoption factors.",
+    "unit": "framework score",
+    "instrumentation": [
+      "Apply implementation readiness framework (e.g., TEHAI checklist)",
+      "Assess evidence across validation, workflow fit, and ethical dimensions",
+      "Score each dimension and identify gaps"
+    ],
+    "component_instrumented": "system_lifecycle",
+    "burden": "moderate",
+    "cost": "moderate",
+    "validity_threat": "Framework scores approximate real-world impact; weightings may not match specific deployment contexts.",
+    "source_ids": [20]
+  },
+  {
+    "id": "trustworthiness_composite",
+    "label": "AI Trustworthiness Composite Score",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Multi-dimensional framework score covering fairness, transparency, privacy, and reliability dimensions of AI trustworthiness.",
+    "unit": "composite score",
+    "instrumentation": [
+      "Assess system behavior across fairness, transparency, and privacy dimensions",
+      "Score each dimension using appropriate sub-metrics",
+      "Compute composite trustworthiness score"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "moderate",
+    "cost": "high",
+    "validity_threat": "Composite scores may mask critical weaknesses in individual dimensions.",
+    "source_ids": [27, 28]
+  },
+  {
+    "id": "rag_faithfulness",
+    "label": "RAG Faithfulness / Answer Relevance",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Evaluates whether a RAG system's generated answers are grounded in retrieved documents and relevant to the question.",
+    "unit": "score",
+    "instrumentation": [
+      "Collect question-context-answer triples",
+      "Score faithfulness: is the answer supported by retrieved context?",
+      "Score relevance: does the answer address the question?",
+      "Use frameworks like RAGAS for automated scoring"
+    ],
+    "component_instrumented": "model_output",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Automated faithfulness checks may miss subtle unsupported claims.",
+    "source_ids": [34]
+  },
+  {
+    "id": "functional_task_success",
+    "label": "Functional Task Success (Test-Based)",
+    "type": "model",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Verifies agent task execution against deterministic test harnesses (e.g., unit tests, file diffs) in software engineering or structured tasks.",
+    "unit": "pass rate",
+    "instrumentation": [
+      "Run agent on real-world task instances (e.g., GitHub issues)",
+      "Verify output against unit tests or ground-truth file changes",
+      "Compute pass rate across test suite"
+    ],
+    "component_instrumented": "agent_behavior",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Test suites may not cover all valid solutions; passing tests doesn't guarantee code quality.",
+    "source_ids": [36, 38]
+  },
+  {
+    "id": "multi_agent_communication",
+    "label": "Multi-Agent Communication Efficiency",
+    "type": "workflow",
+    "evaluation_mode": "offline",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "Evaluates teamwork quality and communication efficiency in multi-agent systems using graph-theoretic analysis of interaction patterns.",
+    "unit": "graph metric scores",
+    "instrumentation": [
+      "Log interaction graphs and message logs between agents",
+      "Analyze communication topology using graph theory",
+      "Compute connectivity, information flow, and redundancy metrics"
+    ],
+    "component_instrumented": "agent_behavior",
+    "burden": "low",
+    "cost": "moderate",
+    "validity_threat": "Graph metrics may not capture message quality or semantic content of agent communication.",
+    "source_ids": [35]
+  },
+  {
+    "id": "carbon_footprint",
+    "label": "Carbon Footprint / Energy Cost",
+    "type": "workflow",
+    "evaluation_mode": "offline",
+    "signal_type": "implicit_behavior",
+    "metric_nature": "objective",
+    "description": "Measures the environmental cost of model inference in terms of energy consumption and carbon emissions.",
+    "unit": "kWh / kg CO2e",
+    "instrumentation": [
+      "Log GPU wattage during inference",
+      "Track token counts and compute time",
+      "Apply carbon accounting formulas based on grid carbon intensity"
+    ],
+    "component_instrumented": "inference_runtime",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "Carbon intensity varies by location and time; measurement tools may be imprecise.",
+    "source_ids": [31, 39]
+  },
+  {
+    "id": "reproducibility_score",
+    "label": "Evaluation Reproducibility / Protocol Quality",
+    "type": "workflow",
+    "evaluation_mode": "offline",
+    "signal_type": "explicit_judgment",
+    "metric_nature": "objective",
+    "description": "Assesses whether an evaluation can be reproduced by documenting prompts, decoding parameters, dataset provenance, and contamination checks.",
+    "unit": "checklist completion score",
+    "instrumentation": [
+      "Document all evaluation configuration (prompts, decoding, versions)",
+      "Run contamination/leakage checks on test data",
+      "Score protocol completeness against reproducibility checklist"
+    ],
+    "component_instrumented": "evaluation_pipeline",
+    "burden": "low",
+    "cost": "low",
+    "validity_threat": "Checklist completion does not guarantee actual reproducibility; undocumented factors may still vary.",
     "source_ids": [5, 6, 7]
   }
 ]

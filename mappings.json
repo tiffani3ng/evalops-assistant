@@ -1,21 +1,76 @@
 {
   "task_to_metrics": {
-    "ad_hoc_info_gathering": ["precision", "response_time", "task_completion_time", "source_click_rate"],
-    "factual_qa": ["precision", "response_time", "task_completion_time", "hallucination_rate", "trust_score"],
-    "verification": ["source_click_rate", "hallucination_rate", "trust_score", "task_completion_time"],
-    "report_drafting": ["task_completion_time", "trust_score", "nasa_tlx"],
-    "triage_classification": ["precision", "task_completion_time", "sus_score"],
-    "sensemaking": ["nasa_tlx", "sus_score", "task_completion_time", "trust_score"],
-    "long_term_tracking": ["precision", "task_completion_time", "sus_score"]
+    "ad_hoc_info_gathering": [
+      "precision", "recall", "ndcg", "f1_score",
+      "response_time", "task_completion_time", "time_to_first_click", "dwell_time",
+      "source_click_rate"
+    ],
+    "long_term_tracking": [
+      "precision", "recall",
+      "task_completion_time",
+      "sus_score"
+    ],
+    "triage_classification": [
+      "precision", "recall", "f1_score", "auc_roc", "accuracy",
+      "task_completion_time",
+      "sus_score"
+    ],
+    "sensemaking": [
+      "nasa_tlx", "sus_score", "trust_score",
+      "task_completion_time", "dwell_time",
+      "explanation_usefulness"
+    ],
+    "factual_qa": [
+      "accuracy", "precision",
+      "hallucination_rate", "rag_faithfulness",
+      "response_time", "task_completion_time",
+      "trust_score"
+    ],
+    "report_drafting": [
+      "coherence_score", "helpfulness_preference",
+      "task_completion_time",
+      "trust_score", "nasa_tlx"
+    ],
+    "verification": [
+      "source_click_rate", "hallucination_rate",
+      "trust_score", "rag_faithfulness",
+      "task_completion_time", "explanation_faithfulness"
+    ]
   },
   "problem_to_metrics": {
-    "latency": ["response_time", "task_completion_time"],
-    "low_trust": ["trust_score", "source_click_rate", "hallucination_rate"],
-    "irrelevant_results": ["precision", "task_completion_time"],
-    "information_overload": ["nasa_tlx", "sus_score", "task_completion_time"],
-    "hard_to_verify": ["source_click_rate", "hallucination_rate", "trust_score"],
-    "poor_coherence": ["sus_score", "nasa_tlx"],
-    "low_accuracy": ["precision", "hallucination_rate", "trust_score"],
-    "poor_usability": ["sus_score", "nasa_tlx", "task_completion_time"]
+    "latency": [
+      "response_time", "task_completion_time", "efficiency_cost"
+    ],
+    "low_trust": [
+      "trust_score", "source_click_rate",
+      "hallucination_rate", "explanation_usefulness",
+      "trustworthiness_composite"
+    ],
+    "irrelevant_results": [
+      "precision", "recall", "ndcg", "f1_score",
+      "task_completion_time", "rag_faithfulness"
+    ],
+    "information_overload": [
+      "nasa_tlx", "sus_score",
+      "task_completion_time", "dwell_time"
+    ],
+    "hard_to_verify": [
+      "source_click_rate", "hallucination_rate",
+      "trust_score", "rag_faithfulness",
+      "explanation_faithfulness"
+    ],
+    "poor_coherence": [
+      "coherence_score", "helpfulness_preference",
+      "sus_score", "nasa_tlx"
+    ],
+    "low_accuracy": [
+      "precision", "accuracy", "f1_score",
+      "hallucination_rate", "trust_score",
+      "calibration_error"
+    ],
+    "poor_usability": [
+      "sus_score", "nasa_tlx",
+      "task_completion_time", "time_to_first_click"
+    ]
   }
 }
