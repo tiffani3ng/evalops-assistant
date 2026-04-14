@@ -1,0 +1,289 @@
+[
+  {
+    "id": 1,
+    "type": "survey/review",
+    "name": "A Multidisciplinary Survey and Framework for Design and Evaluation of Explainable AI Systems",
+    "url": "https://dl.acm.org/doi/pdf/10.1145/3387166",
+    "note": "Explainable AI Systems"
+  },
+  {
+    "id": 3,
+    "type": "course",
+    "name": "Evaluating AI Agents",
+    "url": "https://www.deeplearning.ai/short-courses/evaluating-ai-agents/",
+    "note": "Agentic systems"
+  },
+  {
+    "id": 4,
+    "type": "survey/review",
+    "name": "Holistic Evaluation of Language Models",
+    "url": "https://arxiv.org/pdf/2211.09110",
+    "note": "Multi-dimensional evaluation framework (accuracy, calibration, robustness, fairness, efficiency)"
+  },
+  {
+    "id": 5,
+    "type": "survey/review",
+    "name": "A Survey on Evaluation of Large Language Models",
+    "url": "https://dl.acm.org/doi/10.1145/3641289",
+    "note": "Comprehensive taxonomy of LLM evaluation methods and benchmarks"
+  },
+  {
+    "id": 6,
+    "type": "survey/review",
+    "name": "Evaluating Large Language Models: A Comprehensive Survey",
+    "url": "https://arxiv.org/pdf/2310.19736",
+    "note": "Evaluation across capability, alignment, safety"
+  },
+  {
+    "id": 7,
+    "type": "survey/review",
+    "name": "A Systematic Survey and Critical Review on Evaluating Large Language Models: Challenges, Limitations, and Recommendations",
+    "url": "https://aclanthology.org/2024.emnlp-main.764.pdf",
+    "note": "Reliability, robustness, reproducibility issues in LLM evaluation"
+  },
+  {
+    "id": 8,
+    "type": "survey/review",
+    "name": "The Scales of Justitia: A Comprehensive Survey on Safety Evaluation of LLMs",
+    "url": "https://arxiv.org/pdf/2506.11094",
+    "note": "Toxicity, harmfulness, jailbreak testing metrics"
+  },
+  {
+    "id": 9,
+    "type": "survey/review",
+    "name": "LLMs-as-Judges: A Comprehensive Survey on LLM-based Evaluation Methods",
+    "url": "https://arxiv.org/pdf/2412.05579",
+    "note": "Model-based evaluation and meta-evaluation"
+  },
+  {
+    "id": 10,
+    "type": "survey/review",
+    "name": "Evaluation and Benchmarking of LLM Agents: A Survey",
+    "url": "https://dl.acm.org/doi/epdf/10.1145/3711896.3736570",
+    "note": "Evaluation taxonomy for LLM agents"
+  },
+  {
+    "id": 11,
+    "type": "survey/review",
+    "name": "A Survey on Evaluation of Multimodal Large Language Models",
+    "url": "https://arxiv.org/pdf/2408.15769",
+    "note": "Evaluation of multimodal LLMs (vision-language)"
+  },
+  {
+    "id": 12,
+    "type": "survey/review",
+    "name": "MME-Survey: A Comprehensive Survey on Evaluation of Multimodal LLMs",
+    "url": "https://arxiv.org/pdf/2411.15296",
+    "note": "Multimodal benchmarks and evaluation pipelines"
+  },
+  {
+    "id": 13,
+    "type": "survey/review",
+    "name": "Human-Centered Evaluation of Explainable AI Applications: A Systematic Review",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11525002/pdf/frai-07-1456486.pdf",
+    "note": "User-centered evaluation dimensions in explainable AI"
+  },
+  {
+    "id": 14,
+    "type": "survey/review",
+    "name": "From Anecdotal Evidence to Quantitative Evaluation Methods: A Systematic Review on Evaluating Explainable AI",
+    "url": "https://dl.acm.org/doi/full/10.1145/3583558",
+    "note": "Quantitative explainable AI evaluation methods"
+  },
+  {
+    "id": 15,
+    "type": "survey/review",
+    "name": "Towards Human-centered Explainable AI: A Survey of User Studies for Model Explanations",
+    "url": "https://arxiv.org/pdf/2210.11584",
+    "note": "Human-centered explainable AI evaluation measures (trust, understanding, usability)"
+  },
+  {
+    "id": 16,
+    "type": "survey/review",
+    "name": "Evaluating the necessity of the multiple metrics for assessing explainable AI: A critical examination",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0925231224010531",
+    "note": "Critical analysis of XAI evaluation metrics"
+  },
+  {
+    "id": 17,
+    "type": "survey/review",
+    "name": "An Overview of the Empirical Evaluation of Explainable AI (XAI): A Comprehensive Guideline for User-Centered Evaluation in XAI",
+    "url": "https://www.mdpi.com/2076-3417/14/23/11288",
+    "note": "Empirical (user-centered) evaluation guidelines for XAI"
+  },
+  {
+    "id": 18,
+    "type": "survey/review",
+    "name": "A Survey on Human-Centered Evaluation of Explainable AI Methods in Clinical Decision Support Systems",
+    "url": "https://arxiv.org/pdf/2502.09849",
+    "note": "Human-centered evaluation frameworks for clinical XAI"
+  },
+  {
+    "id": 19,
+    "type": "survey/review",
+    "name": "A survey of explainable artificial intelligence in healthcare: Concepts, applications, and challenges",
+    "url": "https://www.sciencedirect.com/science/article/pii/S2352914824001448?via%3Dihub",
+    "note": "Healthcare XAI overview with evaluation challenges"
+  },
+  {
+    "id": 20,
+    "type": "survey/review",
+    "name": "Evaluation framework to guide implementation of AI systems into healthcare settings",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8513218/",
+    "note": "Healthcare AI implementation evaluation framework"
+  },
+  {
+    "id": 21,
+    "type": "survey/review",
+    "name": "Explainable artificial intelligence (XAI) in medical imaging: a systematic review of techniques, applications, and challenges",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12809972/",
+    "note": "XAI methods and validation issues in medical imaging"
+  },
+  {
+    "id": 22,
+    "type": "course",
+    "name": "Hugging Face LLM Course - Evaluation",
+    "url": "https://huggingface.co/learn/llm-course/en/chapter11/5",
+    "note": "Benchmark-based evaluation tutorial"
+  },
+  {
+    "id": 23,
+    "type": "course",
+    "name": "Hugging Face Agents Course - Observability & Evaluation",
+    "url": "https://huggingface.co/learn/agents-course/bonus-unit2/monitoring-and-evaluating-agents-notebook",
+    "note": "Agent evaluation methods (offline/online metrics, trace analysis)"
+  },
+  {
+    "id": 24,
+    "type": "course",
+    "name": "Mastering LLM Evaluation: Build Reliable Scalable AI Systems",
+    "url": "https://www.udemy.com/course/mastering-llm-evaluation-build-reliable-scalable-ai-systems/",
+    "note": "classical ML metrics"
+  },
+  {
+    "id": 25,
+    "type": "course",
+    "name": "LLM apps: Evaluation",
+    "url": "https://wandb.ai/site/courses/evals/",
+    "note": "LLM evaluation pipelines & LLM-as-judge practical, Automatic LLM Evaluators"
+  },
+  {
+    "id": 26,
+    "type": "course",
+    "name": "AI Evaluations: Foundations & Practical Examples",
+    "url": "https://www.linkedin.com/learning/ai-evaluations-foundations-and-practical-examples",
+    "note": "Manual AI evaluation strategies and automated evaluation techniques and metrics"
+  },
+  {
+    "id": 27,
+    "type": "paper",
+    "name": "Evaluating Trustworthiness in AI: Risks, Metrics, and Applications Across Industries",
+    "url": "https://www.mdpi.com/2079-9292/14/13/2717",
+    "note": "Comprehensive review of AI trustworthiness frameworks, risks, and evaluation metrics across the AI lifecycle, emphasizing fairness, transparency, privacy, security, and real-world deployment trade-offs."
+  },
+  {
+    "id": 28,
+    "type": "survey/review",
+    "name": "Taxonomy of Quality Assessment for Intelligent Software Systems: A Systematic Literature Review",
+    "url": "https://ieeexplore.ieee.org/abstract/document/10320363",
+    "note": "assessment models across functional, reliability, security, usability, and ethical dimensions"
+  },
+  {
+    "id": 29,
+    "type": "article",
+    "name": "AI agent evaluation from prompts to metrics",
+    "url": "https://www.ibm.com/think/tutorials/ai-agent-evaluation#725195535",
+    "note": "Metrics used in tutorial: Correctness, Helpfulness, Coherence"
+  },
+  {
+    "id": 30,
+    "type": "paper",
+    "name": "Survey on Evaluation of LLM-based Agents",
+    "url": "https://arxiv.org/abs/2503.16416",
+    "note": "Cognitive and behavioral capability taxonomies"
+  },
+  {
+    "id": 31,
+    "type": "paper",
+    "name": "Holistic Agent Leaderboard: The Missing Infrastructure for AI Agent Evaluation",
+    "url": "https://www.arxiv.org/abs/2510.11977",
+    "note": "Reliability and cost-efficiency trade-off profiles"
+  },
+  {
+    "id": 32,
+    "type": "paper",
+    "name": "Beyond Task Completion: An Assessment Framework for Evaluating Agentic AI Systems",
+    "url": "https://www.arxiv.org/abs/2512.12791",
+    "note": "Multi-pillar operational and reasoning metrics"
+  },
+  {
+    "id": 33,
+    "type": "article",
+    "name": "A Survey of Agent Evaluation Frameworks: Benchmarking the Benchmarks",
+    "url": "https://www.getmaxim.ai/blog/llm-agent-evaluation-framework-comparison/",
+    "note": "Comparative cross-framework benchmarking standards"
+  },
+  {
+    "id": 34,
+    "type": "paper",
+    "name": "Ragas: Automated Evaluation of Retrieval Augmented Generation",
+    "url": "https://arxiv.org/abs/2309.15217",
+    "note": "Retrieval faithfulness, relevance, and precision"
+  },
+  {
+    "id": 35,
+    "type": "paper",
+    "name": "GEMMAS: Graph-based Evaluation Metrics for Multi Agent Systems",
+    "url": "https://arxiv.org/abs/2507.13190",
+    "note": "Collaboration quality and communication diversity"
+  },
+  {
+    "id": 36,
+    "type": "paper",
+    "name": "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?",
+    "url": "https://arxiv.org/abs/2310.06770",
+    "note": "Real-world GitHub issue resolution rates"
+  },
+  {
+    "id": 37,
+    "type": "paper",
+    "name": "TrustLLM: Trustworthiness in Large Language Models",
+    "url": "https://arxiv.org/abs/2401.05561",
+    "note": "Safety, ethics, and truthfulness benchmarks"
+  },
+  {
+    "id": 38,
+    "type": "paper",
+    "name": "GAIA: a benchmark for General AI Assistants",
+    "url": "https://arxiv.org/abs/2311.12983",
+    "note": "Human-centric real-world task success"
+  },
+  {
+    "id": 39,
+    "type": "paper",
+    "name": "Carbon Emissions and Large Neural Network Training",
+    "url": "https://arxiv.org/abs/2104.10350",
+    "note": "Carbon footprint and energy efficiency"
+  },
+  {
+    "id": 40,
+    "type": "paper",
+    "name": "AgentCrypt: Advancing Privacy and (Secure) Computation in AI Agent Collaboration",
+    "url": "https://openreview.net/pdf?id=SALDDQFGKg",
+    "note": "Privacy-preserving communication and leakage risk"
+  },
+  {
+    "id": 41,
+    "type": "book",
+    "name": "State of Open Source AI Book - 2023 Edition",
+    "url": "https://book.premai.io/state-of-open-source-ai/",
+    "note": "Holistic open-source model performance metrics"
+  },
+  {
+    "id": 42,
+    "type": "paper",
+    "name": "DecodingTrust: A Comprehensive Assessment of Trustworthiness in GPT Models",
+    "url": "https://arxiv.org/abs/2306.11698",
+    "note": "Adversarial robustness and toxicity levels"
+  }
+]

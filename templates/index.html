@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EvalOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <a class="nav-link" href="/sources">Sources</a>
+  </nav>
+  <div class="page-wrapper">
+
+    <div class="hero" id="hero">
+      <h1 class="main-title">What are your users saying?</h1>
+
+      <div class="input-group" id="input-group">
+        <textarea
+          id="feedback-input"
+          placeholder="e.g. This research chatbot takes too long to respond."
+          rows="4"
+          spellcheck="false"
+        ></textarea>
+
+        <details class="context-toggle">
+          <summary>Add context <span class="optional-label">(optional)</span></summary>
+          <div class="context-fields">
+            <label class="context-label" for="model-context-input">Model context</label>
+            <textarea
+              id="model-context-input"
+              placeholder="What does the model do? (e.g. research assistant for students)"
+              rows="2"
+            ></textarea>
+            <label class="context-label" for="stakeholder-context-input">User context</label>
+            <textarea
+              id="stakeholder-context-input"
+              placeholder="Who is giving this feedback? (e.g. undergraduate Economics student)"
+              rows="2"
+            ></textarea>
+          </div>
+        </details>
+
+        <button id="analyze-btn">Analyze</button>
+        <div class="spinner hidden" id="spinner"></div>
+        <p class="error-msg hidden" id="error-msg"></p>
+      </div>
+    </div>
+
+    <section class="results hidden" id="results-section">
+      <div class="interpretation" id="interpretation"></div>
+      <p class="bundle-explanation" id="bundle-explanation"></p>
+      <div class="metrics-grid" id="metrics-grid"></div>
+    </section>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

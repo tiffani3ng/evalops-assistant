@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EvalOps — Sources</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <a class="nav-link" href="/">← Back</a>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="sources-page">
+      <h1 class="sources-title">Sources</h1>
+      <p class="sources-subtitle">Literature and resources drawn on for metric selection and instrumentation guidance.</p>
+
+      <ol class="sources-list">
+        {% for s in sources %}
+        <li class="source-item" id="source-{{ s.id }}">
+          <span class="source-num">[{{ s.id }}]</span>
+          <div class="source-body">
+            {% if s.url %}
+              <a class="source-name" href="{{ s.url }}" target="_blank" rel="noopener">{{ s.name }}</a>
+            {% else %}
+              <span class="source-name">{{ s.name }}</span>
+            {% endif %}
+            <div class="source-meta">
+              <span class="source-type">{{ s.type }}</span>
+              {% if s.note %}<span class="source-note">{{ s.note }}</span>{% endif %}
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+</body>
+</html>
