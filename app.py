@@ -1,20 +1,11 @@
+# ------------------------------------------------------
+               LEGACY STREAMLIT PROTOTYPE
+                   FOR REFERENCE ONLY
+# ------------------------------------------------------
+
 import streamlit as st
 from llm_utils import classify_feedback, generate_bundle_explanation
 from prompts import load_json, get_recommendations, apply_sanity_rules
-
-
-# incredibly basic UI, has feedback box, click analyze, gives a basic list of interpretation and recommended metrics
-# SO FUGLY!!!
-
-### extension 1: allow multiple inputs in app.py
-            ### 1. stakeholder feedback (existing)
-            ### 2. optional: model context (what does it do, what setting is it meant for)
-            ### 3. optional: stakeholder context (what are they trying to do, what is the end goal, what is the info used for)
-
-### extension 2: a more dynamic page
-            ### a text loading animation hehe
-            ### interpretation and allow them to edit it and have the AI re-evaluate based on edits
-            ### allow clickable literature sources with titles and links
 
 # Load knowledge base
 tasks = load_json("tasks.json")
