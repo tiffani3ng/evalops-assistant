@@ -84,7 +84,7 @@ After the feedback is submitted, the assistant classifies the likely task and pr
 Each metric card expands upon hovering to explain what the metric measures and how it could be instrumented, helping teams move from a vague user complaint to a concrete evaluation plan. 
 
 <p align="center">
-  <img src="assets/screenshots/02a-expanded-metric-card.png" alt="Close-up of expanded metric card on EvalOps Assistant output page showing metric summary and instrumentation guide" width="850">
+  <img src="assets/screenshots/02a-expanded-metric-card.png" alt="Close-up of expanded metric card on EvalOps Assistant output page showing metric summary and instrumentation guide" width="425">
 </p>
 
 The value of the tool is the **translation from vague feedback into an actionable evaluation plan:**
