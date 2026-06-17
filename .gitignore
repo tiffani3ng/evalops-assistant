@@ -215,3 +215,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+
+# Flagged feedback runtime artifacts (regenerable via seed_flagged.py + flagged_report.py)
+flagged_feedback.jsonl
+flagged_report.md

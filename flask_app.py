@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, jsonify
 
 from llm_utils import classify_feedback, generate_bundle_explanation
 from prompts import load_json, get_recommendations, apply_sanity_rules
+import flagging
 
 app = Flask(__name__)
 
@@ -53,6 +54,18 @@ def analyze():
 
         bundle_explanation = generate_bundle_explanation(feedback, classification, recommended)
 
+        metric_ids = [m["id"] for m in recommended]
+        flag_decision = flagging.evaluate(feedback, classification, metric_ids)
+        if flag_decision.flagged:
+            flagging.log(
+                feedback=feedback,
+                model_context=model_context,
+                stakeholder_context=stakeholder_context,
+                classification=classification,
+                metric_ids=metric_ids,
+                decision=flag_decision,
+            )
+
         metric_cards = [
             {
                 "id":              m["id"],
@@ -76,10 +89,25 @@ def analyze():
             },
             "metrics":             metric_cards,
             "bundle_explanation":  bundle_explanation,
+            "flag":               flag_decision.to_dict(),
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/flagged")
+def flagged_view():
+    """HTML review queue for feedback that didn't fit the existing taxonomy."""
+    entries = flagging.read_log()
+    return render_template("flagged.html", entries=entries, count=len(entries))
+
+
+@app.route("/flagged.json")
+def flagged_json():
+    """JSON dump of the review queue. For programmatic access."""
+    entries = flagging.read_log()
+    return jsonify({"count": len(entries), "entries": entries})
 
 
 if __name__ == "__main__":
