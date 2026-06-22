@@ -42,6 +42,18 @@ def test_analyze_flags_out_of_vocab_feedback(client):
     body = resp.get_json()
     assert body["flag"]["flagged"] is True
     assert body["flag"]["severity"] == "high"
+    # DEV mode returns confidence="low" on no keyword match — verify the
+    # signal is wired all the way from llm_utils through flagging.evaluate.
+    assert "model_self_reported_low_confidence" in body["flag"]["reasons"]
+
+
+def test_analyze_high_confidence_does_not_add_confidence_reason(client):
+    resp = client.post("/analyze", json={"feedback": "The chatbot is too slow"})
+    body = resp.get_json()
+    # Healthy classification has confidence="high" and should not trip the
+    # low-confidence flag reason.
+    reasons = body["flag"]["reasons"]
+    assert "model_self_reported_low_confidence" not in reasons
 
 
 def test_flagged_view_renders(client):

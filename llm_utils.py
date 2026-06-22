@@ -47,6 +47,10 @@ def _dev_classify(feedback: str) -> dict:
     empty labels are precisely what the flag-for-review queue is built
     to catch. This makes the dev path useful for demoing both healthy
     and edge-case classifications.
+
+    Confidence in the dev path is "high" on a keyword hit (we're certain
+    of the rule that fired) and "low" on a fallback (we have no signal),
+    mirroring how a real model would self-report.
     """
     fb = feedback.lower()
     for keywords, task_labels, problem_labels, summary in _DEV_KEYWORD_RULES:
@@ -55,12 +59,14 @@ def _dev_classify(feedback: str) -> dict:
                 "task_labels": task_labels,
                 "problem_labels": problem_labels,
                 "summary": summary,
+                "confidence": "high",
             }
     # No match — return empty labels so the flag-for-review queue catches it.
     return {
         "task_labels": [],
         "problem_labels": [],
         "summary": "Feedback did not match any known taxonomy keywords.",
+        "confidence": "low",
     }
 
 
@@ -83,6 +89,10 @@ RULES:
 - Return valid JSON only. No preamble, no markdown backticks.
 - You may select multiple task_labels and problem_labels if appropriate.
 - Provide a brief one-sentence summary.
+- Also return a `confidence` field: one of "low", "medium", "high". This
+  is your self-assessed confidence in the classification. Use "low" if the
+  feedback is ambiguous, if no taxonomy entry matches well, or if you're
+  guessing — this signal is used to route uncertain cases to a review queue.
 
 AVAILABLE TASKS:
 {task_list}
@@ -104,7 +114,8 @@ Return JSON with this exact structure:
 {{
   "task_labels": ["task_id_1", "task_id_2"],
   "problem_labels": ["problem_id_1", "problem_id_2"],
-  "summary": "One sentence describing the core issue."
+  "summary": "One sentence describing the core issue.",
+  "confidence": "low" | "medium" | "high"
 }}"""
 
     message = client.messages.create(

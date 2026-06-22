@@ -57,7 +57,12 @@ def analyze():
         bundle_explanation = generate_bundle_explanation(feedback, classification, recommended)
 
         metric_ids = [m["id"] for m in recommended]
-        flag_decision = flagging.evaluate(feedback, classification, metric_ids)
+        flag_decision = flagging.evaluate(
+            feedback,
+            classification,
+            metric_ids,
+            claude_confidence=classification.get("confidence"),
+        )
         if flag_decision.flagged:
             flagging.log(
                 feedback=feedback,
