@@ -12,6 +12,7 @@ Run:
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import flagging
 
@@ -71,10 +72,15 @@ FIXTURES = [
 
 
 def seed(log_path=flagging.LOG_PATH) -> int:
-    """Write fixture entries to the log. Returns the count written."""
-    # Clear existing log to keep the seed deterministic.
-    if log_path.exists():
-        log_path.unlink()
+    """Write fixture entries to the log. Returns the count written.
+
+    Also clears review state and proposal logs so the demo starts clean.
+    """
+    # Clear existing log + review state + proposal log so seeding is deterministic.
+    for p in (log_path, flagging.REVIEWED_PATH,
+              Path(__file__).parent / "taxonomy_suggestions.jsonl"):
+        if p.exists():
+            p.unlink()
 
     count = 0
     for fixture in FIXTURES:

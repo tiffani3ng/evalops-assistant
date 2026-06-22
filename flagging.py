@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import uuid
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,7 @@ from typing import Optional
 
 
 LOG_PATH = Path(__file__).parent / "flagged_feedback.jsonl"
+REVIEWED_PATH = Path(__file__).parent / "reviewed_entries.json"
 
 # Heuristic thresholds (tuned conservatively — better to under-flag than to
 # spam the review queue).
@@ -104,13 +106,16 @@ def log(
     metric_ids: list[str],
     decision: FlagDecision,
     log_path: Path = LOG_PATH,
-) -> None:
-    """Append one JSON line to the flagged-feedback log.
+) -> str:
+    """Append one JSON line to the flagged-feedback log. Returns the entry id.
 
     The log is JSONL so it can be tailed, grep'd, sliced, and never grows a
-    parse cliff if a single line is malformed.
+    parse cliff if a single line is malformed. Each entry gets a stable
+    uuid id so review and proposal actions can target it.
     """
+    entry_id = str(uuid.uuid4())
     entry = {
+        "id": entry_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "feedback": feedback,
         "model_context": model_context,
@@ -122,6 +127,7 @@ def log(
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("a") as f:
         f.write(json.dumps(entry) + "\n")
+    return entry_id
 
 
 def read_log(log_path: Path = LOG_PATH) -> list[dict]:
@@ -139,3 +145,39 @@ def read_log(log_path: Path = LOG_PATH) -> list[dict]:
             except json.JSONDecodeError:
                 continue
     return entries
+
+
+def read_reviewed_ids(reviewed_path: Path = REVIEWED_PATH) -> set[str]:
+    """Return the set of entry ids that have been marked as reviewed."""
+    if not reviewed_path.exists():
+        return set()
+    try:
+        return set(json.loads(reviewed_path.read_text()))
+    except (json.JSONDecodeError, ValueError):
+        return set()
+
+
+def mark_reviewed(entry_id: str, reviewed_path: Path = REVIEWED_PATH) -> bool:
+    """Add an entry id to the reviewed set. Returns True if it was newly added.
+
+    Idempotent — calling on an already-reviewed id is a no-op that returns False.
+    """
+    if not entry_id:
+        return False
+    reviewed = read_reviewed_ids(reviewed_path)
+    if entry_id in reviewed:
+        return False
+    reviewed.add(entry_id)
+    reviewed_path.parent.mkdir(parents=True, exist_ok=True)
+    reviewed_path.write_text(json.dumps(sorted(reviewed), indent=2) + "\n")
+    return True
+
+
+def find_entry(entry_id: str, log_path: Path = LOG_PATH) -> Optional[dict]:
+    """Locate a single log entry by id."""
+    if not entry_id:
+        return None
+    for entry in read_log(log_path):
+        if entry.get("id") == entry_id:
+            return entry
+    return None

@@ -86,13 +86,46 @@ One "low" reason → low.
 - `tiny_metric_bundle` clustered around a particular task → the mapping
   table for that task is under-specified.
 
+## Closing the loop — review and propose
+
+The flag-for-review pass catches edge cases; the next step is letting a
+developer act on them. Each open entry in `/flagged` now exposes two
+actions:
+
+- **Mark as reviewed** (`POST /flagged/<id>/review`) — moves the entry
+  out of the active queue. Reviewed ids live in `reviewed_entries.json`;
+  the original log is never mutated. Toggle "Show reviewed too" on the
+  page to see them.
+- **Propose taxonomy update** (`POST /flagged/<id>/propose`) — opens an
+  inline form (kind, suggested id, label, keywords, rationale) that writes
+  to `taxonomy_suggestions.jsonl`. Proposals start with status `open`.
+
+The proposal log is consumed by:
+
+```
+python proposed_taxonomy.py
+```
+
+…which reads `tasks.json`, `problems.json`, and the proposal log, then
+emits a markdown report grouping open proposals by suggested id (so
+duplicate ids surface as "N proposals converged" — a strong signal) and
+flagging collisions with existing entries. Nothing is auto-merged; a
+human applies accepted proposals by editing the JSON taxonomies and
+manually flipping the proposal status to `merged`.
+
+That closes the loop from item #2 ("flag for developer review") into
+item #1 ("integrate user feedback into the list of problems") of the
+team brief.
+
 ## Limits + extensions left for later
 
 - **No automatic taxonomy suggestions.** A natural next step is to cluster
-  flagged entries (embeddings) and propose candidate new categories. Out of
+  flagged entries (embeddings) and pre-fill proposed categories. Out of
   scope here.
-- **No queue management UI** — items can't be marked "reviewed" or "ignored"
-  yet. The log is append-only.
+- **Proposals are manually merged.** Currently `proposed_taxonomy.py` is
+  read-only; it doesn't write to `tasks.json` / `problems.json` / `mappings.json`.
+  An "apply proposal" command that does the JSON edits + bumps proposal
+  status to `merged` is a clean next step.
 - **`model_self_reported_low_confidence` is wired through but inactive** —
   triggers only when the classification prompt is updated to return a
   confidence field. Trivial change in `llm_utils.py` when desired.
