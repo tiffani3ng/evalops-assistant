@@ -185,9 +185,70 @@ def flagged_propose(entry_id: str):
             nature=form.get("nature") or None,
         )
     except proposals.ProposalValidationError as e:
-        return jsonify({"error": str(e)}), 400
+        # Render the review queue with the error banner so the user sees the
+        # problem in context rather than getting a raw JSON page.
+        all_entries = flagging.read_log()
+        reviewed_ids = flagging.read_reviewed_ids()
+        open_entries = [e_ for e_ in all_entries if e_.get("id") not in reviewed_ids]
+        all_proposals = proposals.read_all()
+        proposals_by_source: dict[str, list[dict]] = {}
+        for p in all_proposals:
+            src = p.get("source_flagged_id")
+            if src:
+                proposals_by_source.setdefault(src, []).append(p)
+        return render_template(
+            "flagged.html",
+            entries=open_entries,
+            count=len(open_entries),
+            reviewed_count=len(reviewed_ids),
+            total_count=len(all_entries),
+            reviewed_ids=reviewed_ids,
+            proposals_by_source=proposals_by_source,
+            show_reviewed=False,
+            error=str(e),
+            error_entry_id=entry_id,
+        ), 400
 
     return redirect(url_for("flagged_view") + f"#flag-{entry_id}")
+
+
+@app.route("/flagged/<entry_id>")
+def flagged_entry_view(entry_id: str):
+    """Permalink view for a single flagged entry, regardless of review status."""
+    entry = flagging.find_entry(entry_id)
+    if not entry:
+        return render_template(
+            "flagged.html",
+            entries=[],
+            count=0,
+            reviewed_count=0,
+            total_count=0,
+            reviewed_ids=set(),
+            proposals_by_source={},
+            show_reviewed=True,
+            error=f"No flagged entry with id {entry_id!r}.",
+            error_entry_id=None,
+        ), 404
+
+    reviewed_ids = flagging.read_reviewed_ids()
+    all_proposals = proposals.read_all()
+    proposals_by_source: dict[str, list[dict]] = {}
+    for p in all_proposals:
+        src = p.get("source_flagged_id")
+        if src:
+            proposals_by_source.setdefault(src, []).append(p)
+
+    return render_template(
+        "flagged.html",
+        entries=[entry],
+        count=1,
+        reviewed_count=len(reviewed_ids),
+        total_count=len(flagging.read_log()),
+        reviewed_ids=reviewed_ids,
+        proposals_by_source=proposals_by_source,
+        show_reviewed=True,
+        single_entry=True,
+    )
 
 
 @app.route("/proposals.json")

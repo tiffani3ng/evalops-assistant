@@ -106,7 +106,7 @@ def test_propose_action_stores_proposal(client):
     assert p["source_flagged_id"] == entry_id
 
 
-def test_propose_with_bad_id_returns_400(client):
+def test_propose_with_bad_id_returns_400_and_renders_banner(client):
     client.post("/analyze", json={"feedback": "another out of vocab thing"})
     entries = client.get("/flagged.json").get_json()["entries"]
     entry_id = entries[-1]["id"]
@@ -119,6 +119,9 @@ def test_propose_with_bad_id_returns_400(client):
         },
     )
     assert resp.status_code == 400
+    # User should see the error rendered in the page, not a raw JSON dump.
+    assert b"Proposal could not be saved" in resp.data
+    assert b"suggested_id" in resp.data
 
 
 def test_propose_unknown_id_404s(client):
@@ -127,3 +130,35 @@ def test_propose_unknown_id_404s(client):
         data={"kind": "problem", "suggested_id": "ok", "suggested_label": "Ok"},
     )
     assert resp.status_code == 404
+
+
+def test_flagged_entry_permalink_view(client):
+    client.post("/analyze", json={"feedback": "completely out-of-vocab text"})
+    entries = client.get("/flagged.json").get_json()["entries"]
+    entry_id = entries[-1]["id"]
+
+    resp = client.get(f"/flagged/{entry_id}")
+    assert resp.status_code == 200
+    assert entry_id.encode() in resp.data
+    assert b"Back to the full queue" in resp.data
+
+
+def test_flagged_entry_permalink_404s_for_unknown(client):
+    resp = client.get("/flagged/nonexistent-id")
+    assert resp.status_code == 404
+    assert b"No flagged entry" in resp.data
+
+
+def test_flagged_entry_permalink_shows_reviewed_entries(client):
+    """Permalink should work even after the entry is marked reviewed."""
+    client.post("/analyze", json={"feedback": "fully out of taxonomy text"})
+    entries = client.get("/flagged.json").get_json()["entries"]
+    entry_id = entries[-1]["id"]
+    client.post(f"/flagged/{entry_id}/review")
+
+    # Default /flagged view hides it
+    main = client.get("/flagged")
+    # Permalink view still finds it
+    permalink = client.get(f"/flagged/{entry_id}")
+    assert permalink.status_code == 200
+    assert entry_id.encode() in permalink.data
