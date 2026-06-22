@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EvalOps — Flagged for Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .flagged-page { padding: 2rem 0; }
+    .flagged-empty { color: #888; padding: 2rem 0; }
+    .flagged-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .flagged-meta-row a { color: #2459a8; text-decoration: underline; }
+    .flag-entry {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      background: #fafafa;
+    }
+    .flag-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+    .flag-severity {
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .flag-severity.high   { background: #fde2e2; color: #a00; }
+    .flag-severity.medium { background: #fff1cc; color: #8a6500; }
+    .flag-severity.low    { background: #e2efff; color: #2459a8; }
+    .flag-timestamp { color: #888; font-size: 0.85rem; }
+    .flag-reviewed-badge {
+      background: #e0f0d8; color: #2d6b1e;
+      padding: 0.15rem 0.6rem; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .flag-feedback {
+      font-style: italic;
+      margin: 0.5rem 0 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-left: 3px solid #999;
+      background: #fff;
+    }
+    .flag-reasons {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin: 0.25rem 0 0.5rem;
+    }
+    .flag-reason {
+      background: #efefef;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-family: monospace;
+    }
+    .flag-meta {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 0.75rem;
+    }
+    .flag-meta strong { color: #222; }
+
+    /* Action row */
+    .flag-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed #d4d4d4;
+    }
+    .flag-action-btn {
+      background: #fff;
+      border: 1px solid #c9c9c9;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .flag-action-btn:hover { background: #f3f3f3; }
+    .flag-action-btn.primary {
+      background: #222; color: #fff; border-color: #222;
+    }
+    .flag-action-btn.primary:hover { background: #444; }
+
+    /* Propose form */
+    .propose-form {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fff;
+      border: 1px solid #d4d4d4;
+      border-radius: 6px;
+    }
+    .propose-form.open { display: block; }
+    .propose-form label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin: 0.5rem 0 0.25rem;
+    }
+    .propose-form input, .propose-form select, .propose-form textarea {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #c9c9c9;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    .propose-form .hint {
+      font-size: 0.75rem;
+      color: #777;
+      font-weight: 400;
+      margin-left: 0.5rem;
+    }
+    .propose-form .submit-row {
+      margin-top: 0.85rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .propose-row-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .proposal-cat-chip {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      margin-left: 0.25rem;
+    }
+    .proposal-cat-chip.stack    { background: #ede2ff; color: #5b2c9c; }
+    .proposal-cat-chip.nature   { background: #fff0d6; color: #8a4900; }
+
+    /* Existing proposals attached to a flagged entry */
+    .attached-proposals {
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: #f3f7ff;
+      border-left: 3px solid #2459a8;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.85rem;
+    }
+    .attached-proposals .proposal-item { margin: 0.25rem 0; }
+    .attached-proposals code {
+      background: #fff;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <a class="nav-link" href="/">← Back</a>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="sources-page flagged-page">
+      <h1 class="sources-title">Flagged for Review</h1>
+      <p class="sources-subtitle">
+        Feedback that didn't fit cleanly into the existing taxonomy.
+      </p>
+
+      <div class="flagged-meta-row">
+        {% if show_reviewed %}
+          <span>Showing all {{ total_count }} entries ({{ reviewed_count }} reviewed).</span>
+          <a href="{{ url_for('flagged_view') }}">Hide reviewed</a>
+        {% else %}
+          <span>{{ count }} open · {{ reviewed_count }} reviewed.</span>
+          {% if reviewed_count %}
+            <a href="{{ url_for('flagged_view', show_reviewed=1) }}">Show reviewed too</a>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      {% if not entries %}
+        <p class="flagged-empty">No flagged feedback in the queue.</p>
+      {% else %}
+        {% for e in entries|reverse %}
+        {% set entry_id = e.get('id') %}
+        {% set is_reviewed = entry_id in reviewed_ids %}
+        {% set existing_proposals = proposals_by_source.get(entry_id, []) %}
+        <div class="flag-entry" id="flag-{{ entry_id }}">
+          <div class="flag-header">
+            {% if e.flag.severity %}
+              <span class="flag-severity {{ e.flag.severity }}">{{ e.flag.severity }}</span>
+            {% endif %}
+            {% if is_reviewed %}
+              <span class="flag-reviewed-badge">reviewed</span>
+            {% endif %}
+            <span class="flag-timestamp">{{ e.timestamp }}</span>
+          </div>
+
+          <div class="flag-feedback">"{{ e.feedback }}"</div>
+
+          <div class="flag-reasons">
+            {% for r in e.flag.reasons %}
+              <span class="flag-reason">{{ r }}</span>
+            {% endfor %}
+          </div>
+
+          <div class="flag-meta">
+            <strong>Tasks identified:</strong>
+            {{ e.classification.task_labels|join(', ') if e.classification.task_labels else '(none)' }}
+            <br />
+            <strong>Problems identified:</strong>
+            {{ e.classification.problem_labels|join(', ') if e.classification.problem_labels else '(none)' }}
+            <br />
+            <strong>Metrics recommended:</strong>
+            {{ e.metric_ids|length }} ({{ e.metric_ids|join(', ') if e.metric_ids else 'none' }})
+            {% if e.model_context %}<br /><strong>Model context:</strong> {{ e.model_context }}{% endif %}
+            {% if e.stakeholder_context %}<br /><strong>Stakeholder:</strong> {{ e.stakeholder_context }}{% endif %}
+          </div>
+
+          {% if existing_proposals %}
+          <div class="attached-proposals">
+            <strong>Proposals from this entry ({{ existing_proposals|length }}):</strong>
+            {% for p in existing_proposals %}
+              <div class="proposal-item">
+                <code>{{ p.kind }}</code> →
+                <code>{{ p.suggested_id }}</code>
+                ({{ p.suggested_label }})
+                {% if p.tech_stack %}<span class="proposal-cat-chip stack">{{ p.tech_stack }}</span>{% endif %}
+                {% if p.nature %}<span class="proposal-cat-chip nature">{{ p.nature }}</span>{% endif %}
+                {% if p.suggested_keywords %}
+                  · keywords: {{ p.suggested_keywords|join(', ') }}
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if entry_id and not is_reviewed %}
+          <div class="flag-actions">
+            <form method="POST" action="{{ url_for('flagged_review', entry_id=entry_id) }}" style="display:inline">
+              <button type="submit" class="flag-action-btn">Mark as reviewed</button>
+            </form>
+            <button type="button" class="flag-action-btn primary"
+                    onclick="document.getElementById('propose-{{ entry_id }}').classList.toggle('open')">
+              Propose taxonomy update
+            </button>
+          </div>
+
+          <form class="propose-form" id="propose-{{ entry_id }}"
+                method="POST" action="{{ url_for('flagged_propose', entry_id=entry_id) }}">
+            <label>Kind <span class="hint">what kind of category to add</span></label>
+            <select name="kind" required>
+              <option value="problem">problem (what's going wrong)</option>
+              <option value="task">task (what the user is trying to do)</option>
+            </select>
+
+            <label>Suggested id <span class="hint">lowercase, underscores only — e.g. <code>multi_turn_coherence</code></span></label>
+            <input type="text" name="suggested_id" placeholder="e.g. multi_turn_coherence" required pattern="[a-z][a-z0-9_]*" />
+
+            <label>Suggested label <span class="hint">the human-readable name</span></label>
+            <input type="text" name="suggested_label" placeholder="e.g. Multi-turn coherence loss" required />
+
+            <label>Suggested keywords <span class="hint">comma-separated</span></label>
+            <input type="text" name="suggested_keywords" placeholder="e.g. multi-turn, follow-up, conversation, forget" />
+
+            <div class="propose-row-2col">
+              <div>
+                <label>Tech stack <span class="hint">for problem proposals</span></label>
+                <select name="tech_stack">
+                  <option value="">(none / unsure)</option>
+                  <option value="frontend">frontend</option>
+                  <option value="backend">backend</option>
+                  <option value="model">model</option>
+                  <option value="infra">infra</option>
+                  <option value="mixed">mixed</option>
+                </select>
+              </div>
+              <div>
+                <label>Nature <span class="hint">design or bug</span></label>
+                <select name="nature">
+                  <option value="">(none / unsure)</option>
+                  <option value="bug">bug</option>
+                  <option value="design">design</option>
+                  <option value="design+bug">design+bug</option>
+                </select>
+              </div>
+            </div>
+
+            <label>Rationale <span class="hint">why this category is needed</span></label>
+            <textarea name="rationale" rows="2" placeholder="What about this feedback isn't captured by the existing taxonomy?"></textarea>
+
+            <div class="submit-row">
+              <button type="submit" class="flag-action-btn primary">Submit proposal</button>
+              <button type="button" class="flag-action-btn"
+                      onclick="document.getElementById('propose-{{ entry_id }}').classList.remove('open')">
+                Cancel
+              </button>
+            </div>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

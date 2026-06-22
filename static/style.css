@@ -319,6 +319,36 @@ body {
   color: var(--muted);
 }
 
+/* Problem categorization (tech stack + nature) */
+.categorization-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+}
+
+.categorization-label {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 0.1rem;
+}
+
+.label-chip.stack[data-stack="frontend"] { background: #e2efff; color: #1d4ea0; border-color: #b9d6ff; }
+.label-chip.stack[data-stack="backend"]  { background: #e0f0d8; color: #2d6b1e; border-color: #b9d6a7; }
+.label-chip.stack[data-stack="model"]    { background: #ede2ff; color: #5b2c9c; border-color: #cdb6f0; }
+.label-chip.stack[data-stack="infra"]    { background: #fff1cc; color: #8a6500; border-color: #ecd58a; }
+.label-chip.stack[data-stack="mixed"]    { background: #efefef; color: #444; border-color: #d4d4d4; }
+
+.label-chip.nature[data-nature="bug"]          { background: #fde2e2; color: #a00; border-color: #f4b0b0; }
+.label-chip.nature[data-nature="design"]       { background: #d8f0ec; color: #1c6b5c; border-color: #a7d6cd; }
+.label-chip.nature[data-nature="design+bug"]   { background: #fff0d6; color: #8a4900; border-color: #ecc78a; }
+
 /* Bundle explanation */
 .bundle-explanation {
   font-family: system-ui, sans-serif;
