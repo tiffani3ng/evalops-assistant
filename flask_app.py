@@ -6,6 +6,7 @@ from llm_utils import classify_feedback, generate_bundle_explanation
 from prompts import load_json, get_recommendations, apply_sanity_rules
 import flagging
 import proposals
+import repo_analyzer
 
 app = Flask(__name__)
 
@@ -260,6 +261,31 @@ def flagged_entry_view(entry_id: str):
 def proposals_json():
     """JSON dump of all taxonomy-update proposals."""
     return jsonify({"proposals": proposals.read_all()})
+
+
+@app.route("/analyze-repo", methods=["POST"])
+def analyze_repo():
+    """Stretch endpoint: feedback + a GitHub URL → likely-source candidates.
+
+    In DEV mode returns a deterministic mock so the endpoint is exercisable
+    without network or LLM credentials. In live mode fetches a slice of the
+    repo and asks the LLM where the issue likely originates.
+    """
+    data = request.get_json(silent=True) or {}
+    feedback = (data.get("feedback") or "").strip()
+    repo_url = (data.get("repo_url") or "").strip()
+
+    if not feedback:
+        return jsonify({"error": "feedback is required"}), 400
+    if not repo_url:
+        return jsonify({"error": "repo_url is required"}), 400
+
+    try:
+        result = repo_analyzer.analyze(feedback, repo_url)
+    except repo_analyzer.RepoAnalysisError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify(result)
 
 
 if __name__ == "__main__":
