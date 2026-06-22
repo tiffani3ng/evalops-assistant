@@ -1,25 +1,29 @@
 """
-Diff the current taxonomy against the proposal log.
+Diff the current taxonomy against the proposal log, or apply a proposal.
 
-Reads tasks.json, problems.json, and taxonomy_suggestions.jsonl, then prints a
-markdown report showing what the taxonomy would look like if every open
-proposal were accepted — separated cleanly from the existing entries.
+Default behaviour (no --apply) is read-only: reads tasks.json, problems.json,
+and taxonomy_suggestions.jsonl and writes a markdown diff report. Nothing is
+mutated.
 
-Nothing is mutated. The script is meant to give a developer a single review
-artifact: "here are the entries waiting on me, here is what they'd become."
+With --apply <proposal_id>, the named proposal is committed to the taxonomy
+JSON files and its status in the suggestion log is bumped to "merged". This
+closes the review loop end-to-end without anyone hand-editing JSON.
 
 Run:
-    python proposed_taxonomy.py                  # writes proposed_taxonomy.md
-    python proposed_taxonomy.py --stdout         # print to stdout
-    python proposed_taxonomy.py --out path.md    # custom output path
+    python proposed_taxonomy.py                       # writes proposed_taxonomy.md
+    python proposed_taxonomy.py --stdout              # print diff to stdout
+    python proposed_taxonomy.py --out path.md         # custom diff output path
+    python proposed_taxonomy.py --apply <proposal_id> # commit one proposal
+    python proposed_taxonomy.py --apply <proposal_id> --dry-run  # preview only
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import proposals
@@ -126,11 +130,116 @@ def build_report() -> str:
     return "\n".join(out)
 
 
+class ApplyError(RuntimeError):
+    """Raised when --apply cannot proceed (unknown id, collision, etc.)."""
+
+
+def apply_proposal(
+    proposal_id: str,
+    *,
+    tasks_path: Path = BASE / "tasks.json",
+    problems_path: Path = BASE / "problems.json",
+    suggestions_path: Path = proposals.SUGGESTIONS_PATH,
+    dry_run: bool = False,
+) -> dict:
+    """Commit one open proposal to the taxonomy and mark it merged.
+
+    Returns a small summary dict describing what changed. Raises ApplyError
+    on any non-recoverable problem (missing proposal, id collision, already
+    merged, etc.) — the caller decides how to render the error.
+    """
+    all_props = proposals.read_all(suggestions_path)
+    target = next((p for p in all_props if p.get("id") == proposal_id), None)
+    if target is None:
+        raise ApplyError(f"no proposal with id {proposal_id!r}")
+    if target.get("status") != "open":
+        raise ApplyError(
+            f"proposal {proposal_id} has status {target.get('status')!r}, expected 'open'"
+        )
+
+    kind = target["kind"]
+    target_path = problems_path if kind == "problem" else tasks_path
+    entries = json.loads(target_path.read_text())
+
+    if any(e.get("id") == target["suggested_id"] for e in entries):
+        raise ApplyError(
+            f"{kind} id {target['suggested_id']!r} already exists in {target_path.name}; "
+            "reject the proposal or pick a different id"
+        )
+
+    new_entry: dict = {
+        "id":       target["suggested_id"],
+        "label":    target["suggested_label"],
+        "keywords": target.get("suggested_keywords") or [],
+    }
+    if kind == "task":
+        # tasks have a description field; problems don't.
+        new_entry["description"] = target.get("rationale") or "Added via taxonomy proposal."
+        # Match the schema order tasks use (id, label, description, keywords).
+        new_entry = {
+            "id":          new_entry["id"],
+            "label":       new_entry["label"],
+            "description": new_entry["description"],
+            "keywords":    new_entry["keywords"],
+        }
+    else:
+        if target.get("tech_stack"):
+            new_entry["tech_stack"] = target["tech_stack"]
+        if target.get("nature"):
+            new_entry["nature"] = target["nature"]
+
+    if dry_run:
+        return {
+            "would_apply":   True,
+            "kind":          kind,
+            "target_path":   str(target_path),
+            "new_entry":     new_entry,
+            "proposal_id":   proposal_id,
+        }
+
+    # Write taxonomy file
+    entries.append(new_entry)
+    target_path.write_text(json.dumps(entries, indent=2) + "\n")
+
+    # Mark proposal as merged — rewrite suggestion log with updated status
+    updated = []
+    for p in all_props:
+        if p.get("id") == proposal_id:
+            p = {**p, "status": "merged", "merged_at": datetime.now(timezone.utc).isoformat()}
+        updated.append(p)
+    with suggestions_path.open("w") as f:
+        for p in updated:
+            f.write(json.dumps(p) + "\n")
+
+    return {
+        "applied":      True,
+        "kind":         kind,
+        "target_path":  str(target_path),
+        "new_entry":    new_entry,
+        "proposal_id":  proposal_id,
+    }
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Diff the taxonomy against the proposal log.")
-    parser.add_argument("--out", default="proposed_taxonomy.md", help="Output path (default: proposed_taxonomy.md)")
-    parser.add_argument("--stdout", action="store_true", help="Print to stdout instead of writing")
+    parser = argparse.ArgumentParser(description="Diff the taxonomy against the proposal log, or apply a proposal.")
+    parser.add_argument("--out", default="proposed_taxonomy.md", help="Diff output path (default: proposed_taxonomy.md)")
+    parser.add_argument("--stdout", action="store_true", help="Print diff to stdout instead of writing")
+    parser.add_argument("--apply", metavar="PROPOSAL_ID", help="Apply this proposal to the taxonomy")
+    parser.add_argument("--dry-run", action="store_true", help="With --apply, show what would change without writing")
     args = parser.parse_args()
+
+    if args.apply:
+        try:
+            result = apply_proposal(args.apply, dry_run=args.dry_run)
+        except ApplyError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
+        verb = "Would apply" if args.dry_run else "Applied"
+        print(f"{verb} proposal {result['proposal_id']} ({result['kind']}) to {result['target_path']}:")
+        print(json.dumps(result["new_entry"], indent=2))
+        if not args.dry_run:
+            print("Proposal status marked as 'merged' in taxonomy_suggestions.jsonl.")
+        return 0
 
     report = build_report()
     if args.stdout:
