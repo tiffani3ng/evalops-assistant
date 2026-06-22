@@ -105,7 +105,7 @@ def log(
     classification: dict,
     metric_ids: list[str],
     decision: FlagDecision,
-    log_path: Path = LOG_PATH,
+    log_path: Optional[Path] = None,
 ) -> str:
     """Append one JSON line to the flagged-feedback log. Returns the entry id.
 
@@ -113,6 +113,8 @@ def log(
     parse cliff if a single line is malformed. Each entry gets a stable
     uuid id so review and proposal actions can target it.
     """
+    if log_path is None:
+        log_path = LOG_PATH
     entry_id = str(uuid.uuid4())
     entry = {
         "id": entry_id,
@@ -130,8 +132,10 @@ def log(
     return entry_id
 
 
-def read_log(log_path: Path = LOG_PATH) -> list[dict]:
+def read_log(log_path: Optional[Path] = None) -> list[dict]:
     """Read the JSONL log; tolerate malformed lines."""
+    if log_path is None:
+        log_path = LOG_PATH
     if not log_path.exists():
         return []
     entries = []
@@ -147,8 +151,10 @@ def read_log(log_path: Path = LOG_PATH) -> list[dict]:
     return entries
 
 
-def read_reviewed_ids(reviewed_path: Path = REVIEWED_PATH) -> set[str]:
+def read_reviewed_ids(reviewed_path: Optional[Path] = None) -> set[str]:
     """Return the set of entry ids that have been marked as reviewed."""
+    if reviewed_path is None:
+        reviewed_path = REVIEWED_PATH
     if not reviewed_path.exists():
         return set()
     try:
@@ -157,11 +163,13 @@ def read_reviewed_ids(reviewed_path: Path = REVIEWED_PATH) -> set[str]:
         return set()
 
 
-def mark_reviewed(entry_id: str, reviewed_path: Path = REVIEWED_PATH) -> bool:
+def mark_reviewed(entry_id: str, reviewed_path: Optional[Path] = None) -> bool:
     """Add an entry id to the reviewed set. Returns True if it was newly added.
 
     Idempotent — calling on an already-reviewed id is a no-op that returns False.
     """
+    if reviewed_path is None:
+        reviewed_path = REVIEWED_PATH
     if not entry_id:
         return False
     reviewed = read_reviewed_ids(reviewed_path)
@@ -173,8 +181,10 @@ def mark_reviewed(entry_id: str, reviewed_path: Path = REVIEWED_PATH) -> bool:
     return True
 
 
-def find_entry(entry_id: str, log_path: Path = LOG_PATH) -> Optional[dict]:
+def find_entry(entry_id: str, log_path: Optional[Path] = None) -> Optional[dict]:
     """Locate a single log entry by id."""
+    if log_path is None:
+        log_path = LOG_PATH
     if not entry_id:
         return None
     for entry in read_log(log_path):

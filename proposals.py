@@ -67,7 +67,7 @@ def add(
     rationale: Optional[str] = None,
     tech_stack: Optional[str] = None,
     nature: Optional[str] = None,
-    suggestions_path: Path = SUGGESTIONS_PATH,
+    suggestions_path: Optional[Path] = None,
 ) -> str:
     """Validate and append a proposal. Returns the new proposal id.
 
@@ -79,7 +79,7 @@ def add(
     if kind not in VALID_KINDS:
         raise ProposalValidationError(f"kind must be one of {VALID_KINDS}, got {kind!r}")
 
-    suggested_id = (suggested_id or "").strip().lower()
+    suggested_id = (suggested_id or "").strip()
     if not ID_PATTERN.match(suggested_id):
         raise ProposalValidationError(
             "suggested_id must be lowercase, start with a letter, and contain only "
@@ -95,6 +95,9 @@ def add(
 
     tech_stack_value = _coerce_optional_enum(tech_stack, VALID_TECH_STACKS, "tech_stack")
     nature_value = _coerce_optional_enum(nature, VALID_NATURES, "nature")
+
+    if suggestions_path is None:
+        suggestions_path = SUGGESTIONS_PATH
 
     proposal_id = str(uuid.uuid4())
     proposal = {
@@ -116,8 +119,10 @@ def add(
     return proposal_id
 
 
-def read_all(suggestions_path: Path = SUGGESTIONS_PATH) -> list[dict]:
+def read_all(suggestions_path: Optional[Path] = None) -> list[dict]:
     """Read every proposal; tolerate malformed lines."""
+    if suggestions_path is None:
+        suggestions_path = SUGGESTIONS_PATH
     if not suggestions_path.exists():
         return []
     out = []
@@ -133,13 +138,13 @@ def read_all(suggestions_path: Path = SUGGESTIONS_PATH) -> list[dict]:
     return out
 
 
-def open_proposals(suggestions_path: Path = SUGGESTIONS_PATH) -> list[dict]:
+def open_proposals(suggestions_path: Optional[Path] = None) -> list[dict]:
     """Proposals not yet marked merged or rejected."""
     return [p for p in read_all(suggestions_path) if p.get("status", "open") == "open"]
 
 
 def proposals_for_flagged(
-    flagged_id: str, suggestions_path: Path = SUGGESTIONS_PATH
+    flagged_id: str, suggestions_path: Optional[Path] = None
 ) -> list[dict]:
     """All proposals that originated from a given flagged entry."""
     if not flagged_id:
