@@ -117,6 +117,27 @@ That closes the loop from item #2 ("flag for developer review") into
 item #1 ("integrate user feedback into the list of problems") of the
 team brief.
 
+## Problem categorization — tech stack and nature
+
+Each entry in `problems.json` now carries two extra fields:
+
+- `tech_stack`: one of `frontend`, `backend`, `model`, `infra`, `mixed`
+- `nature`: one of `bug`, `design`, `design+bug`
+
+The `/analyze` response includes `classification.problem_categorizations`,
+a list of `{id, label, tech_stack, nature}` for each problem the recommender
+matched. The output UI shows these as a "Tech stack: … / Nature: …" chip row
+below the existing task/problem chips, color-coded by category.
+
+The propose form on `/flagged` now captures `tech_stack` and `nature` so new
+problem proposals carry the same metadata into the taxonomy-suggestion log.
+`proposed_taxonomy.py` surfaces the categorization in its diff report.
+
+This addresses items #3 and #4 of the team brief: *categorize problems by
+tech stack* and *design/bug/design+bug classification*. The richer version
+(automated repo analysis to *infer* tech stack from a code link) is left for
+follow-up work.
+
 ## Limits + extensions left for later
 
 - **No automatic taxonomy suggestions.** A natural next step is to cluster

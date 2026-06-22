@@ -139,6 +139,21 @@
       display: flex;
       gap: 0.5rem;
     }
+    .propose-row-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .proposal-cat-chip {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      margin-left: 0.25rem;
+    }
+    .proposal-cat-chip.stack    { background: #ede2ff; color: #5b2c9c; }
+    .proposal-cat-chip.nature   { background: #fff0d6; color: #8a4900; }
 
     /* Existing proposals attached to a flagged entry */
     .attached-proposals {
@@ -229,6 +244,8 @@
                 <code>{{ p.kind }}</code> →
                 <code>{{ p.suggested_id }}</code>
                 ({{ p.suggested_label }})
+                {% if p.tech_stack %}<span class="proposal-cat-chip stack">{{ p.tech_stack }}</span>{% endif %}
+                {% if p.nature %}<span class="proposal-cat-chip nature">{{ p.nature }}</span>{% endif %}
                 {% if p.suggested_keywords %}
                   · keywords: {{ p.suggested_keywords|join(', ') }}
                 {% endif %}
@@ -264,6 +281,29 @@
 
             <label>Suggested keywords <span class="hint">comma-separated</span></label>
             <input type="text" name="suggested_keywords" placeholder="e.g. multi-turn, follow-up, conversation, forget" />
+
+            <div class="propose-row-2col">
+              <div>
+                <label>Tech stack <span class="hint">for problem proposals</span></label>
+                <select name="tech_stack">
+                  <option value="">(none / unsure)</option>
+                  <option value="frontend">frontend</option>
+                  <option value="backend">backend</option>
+                  <option value="model">model</option>
+                  <option value="infra">infra</option>
+                  <option value="mixed">mixed</option>
+                </select>
+              </div>
+              <div>
+                <label>Nature <span class="hint">design or bug</span></label>
+                <select name="nature">
+                  <option value="">(none / unsure)</option>
+                  <option value="bug">bug</option>
+                  <option value="design">design</option>
+                  <option value="design+bug">design+bug</option>
+                </select>
+              </div>
+            </div>
 
             <label>Rationale <span class="hint">why this category is needed</span></label>
             <textarea name="rationale" rows="2" placeholder="What about this feedback isn't captured by the existing taxonomy?"></textarea>

@@ -21,6 +21,8 @@ from typing import Iterable, Optional
 SUGGESTIONS_PATH = Path(__file__).parent / "taxonomy_suggestions.jsonl"
 
 VALID_KINDS = ("task", "problem")
+VALID_TECH_STACKS = ("frontend", "backend", "model", "infra", "mixed")
+VALID_NATURES = ("bug", "design", "design+bug")
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
@@ -41,6 +43,20 @@ def _coerce_keywords(raw: object) -> list[str]:
     return [k for k in items if k]
 
 
+def _coerce_optional_enum(raw: object, valid: tuple[str, ...], field_name: str) -> Optional[str]:
+    """Validate an optional enum field; None and empty are allowed."""
+    if raw is None:
+        return None
+    value = str(raw).strip().lower()
+    if not value:
+        return None
+    if value not in valid:
+        raise ProposalValidationError(
+            f"{field_name} must be one of {valid} or empty, got {value!r}"
+        )
+    return value
+
+
 def add(
     *,
     source_flagged_id: Optional[str],
@@ -49,9 +65,16 @@ def add(
     suggested_label: str,
     suggested_keywords: object = None,
     rationale: Optional[str] = None,
+    tech_stack: Optional[str] = None,
+    nature: Optional[str] = None,
     suggestions_path: Path = SUGGESTIONS_PATH,
 ) -> str:
-    """Validate and append a proposal. Returns the new proposal id."""
+    """Validate and append a proposal. Returns the new proposal id.
+
+    tech_stack and nature are optional and only meaningful for kind='problem'.
+    They are accepted on task proposals too but stored as-is — callers can
+    ignore them at read time.
+    """
     kind = (kind or "").strip().lower()
     if kind not in VALID_KINDS:
         raise ProposalValidationError(f"kind must be one of {VALID_KINDS}, got {kind!r}")
@@ -70,6 +93,9 @@ def add(
     keywords = _coerce_keywords(suggested_keywords)
     rationale = (rationale or "").strip() or None
 
+    tech_stack_value = _coerce_optional_enum(tech_stack, VALID_TECH_STACKS, "tech_stack")
+    nature_value = _coerce_optional_enum(nature, VALID_NATURES, "nature")
+
     proposal_id = str(uuid.uuid4())
     proposal = {
         "id": proposal_id,
@@ -79,6 +105,8 @@ def add(
         "suggested_id": suggested_id,
         "suggested_label": suggested_label,
         "suggested_keywords": keywords,
+        "tech_stack": tech_stack_value,
+        "nature": nature_value,
         "rationale": rationale,
         "status": "open",
     }

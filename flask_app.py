@@ -19,6 +19,7 @@ sources  = load_json(os.path.join(BASE, "sources.json"))
 
 task_label_map    = {t["id"]: t["label"] for t in tasks}
 problem_label_map = {p["id"]: p["label"] for p in problems}
+problem_by_id     = {p["id"]: p for p in problems}
 
 
 @app.route("/")
@@ -80,6 +81,18 @@ def analyze():
             for m in recommended
         ]
 
+        problem_categorizations = []
+        for pid in problem_labels:
+            entry = problem_by_id.get(pid)
+            if not entry:
+                continue
+            problem_categorizations.append({
+                "id":          pid,
+                "label":       entry.get("label", pid),
+                "tech_stack":  entry.get("tech_stack"),
+                "nature":      entry.get("nature"),
+            })
+
         return jsonify({
             "classification": {
                 "task_labels":          task_labels,
@@ -87,6 +100,7 @@ def analyze():
                 "summary":              classification.get("summary", ""),
                 "task_labels_human":    [task_label_map.get(t, t) for t in task_labels],
                 "problem_labels_human": [problem_label_map.get(p, p) for p in problem_labels],
+                "problem_categorizations": problem_categorizations,
             },
             "metrics":             metric_cards,
             "bundle_explanation":  bundle_explanation,
@@ -167,6 +181,8 @@ def flagged_propose(entry_id: str):
             suggested_label=form.get("suggested_label", ""),
             suggested_keywords=form.get("suggested_keywords", ""),
             rationale=form.get("rationale", ""),
+            tech_stack=form.get("tech_stack") or None,
+            nature=form.get("nature") or None,
         )
     except proposals.ProposalValidationError as e:
         return jsonify({"error": str(e)}), 400

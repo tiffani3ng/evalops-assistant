@@ -99,6 +99,13 @@ def build_report() -> str:
                 rationale = p.get("rationale") or "(no rationale provided)"
                 out.append(f"- **{p['suggested_label']}**")
                 out.append(f"    - Keywords: {', '.join(f'`{k}`' for k in kws) if kws else '_(none)_'}")
+                if p.get("tech_stack") or p.get("nature"):
+                    cat_parts = []
+                    if p.get("tech_stack"):
+                        cat_parts.append(f"tech_stack=`{p['tech_stack']}`")
+                    if p.get("nature"):
+                        cat_parts.append(f"nature=`{p['nature']}`")
+                    out.append(f"    - Categorization: {', '.join(cat_parts)}")
                 out.append(f"    - Rationale: {rationale}")
                 if p.get("source_flagged_id"):
                     out.append(f"    - Source flagged entry: `{p['source_flagged_id']}`")
