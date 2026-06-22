@@ -1,9 +1,11 @@
 import os
 import json
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 
 from llm_utils import classify_feedback, generate_bundle_explanation
 from prompts import load_json, get_recommendations, apply_sanity_rules
+import flagging
+import proposals
 
 app = Flask(__name__)
 
@@ -53,6 +55,18 @@ def analyze():
 
         bundle_explanation = generate_bundle_explanation(feedback, classification, recommended)
 
+        metric_ids = [m["id"] for m in recommended]
+        flag_decision = flagging.evaluate(feedback, classification, metric_ids)
+        if flag_decision.flagged:
+            flagging.log(
+                feedback=feedback,
+                model_context=model_context,
+                stakeholder_context=stakeholder_context,
+                classification=classification,
+                metric_ids=metric_ids,
+                decision=flag_decision,
+            )
+
         metric_cards = [
             {
                 "id":              m["id"],
@@ -76,10 +90,94 @@ def analyze():
             },
             "metrics":             metric_cards,
             "bundle_explanation":  bundle_explanation,
+            "flag":               flag_decision.to_dict(),
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/flagged")
+def flagged_view():
+    """HTML review queue for feedback that didn't fit the existing taxonomy."""
+    show_reviewed = request.args.get("show_reviewed") == "1"
+    all_entries = flagging.read_log()
+    reviewed_ids = flagging.read_reviewed_ids()
+    if show_reviewed:
+        open_entries = all_entries
+    else:
+        open_entries = [e for e in all_entries if e.get("id") not in reviewed_ids]
+
+    # Group proposals by source flagged entry for easy template rendering.
+    all_proposals = proposals.read_all()
+    proposals_by_source: dict[str, list[dict]] = {}
+    for p in all_proposals:
+        src = p.get("source_flagged_id")
+        if src:
+            proposals_by_source.setdefault(src, []).append(p)
+
+    return render_template(
+        "flagged.html",
+        entries=open_entries,
+        count=len(open_entries),
+        reviewed_count=len(reviewed_ids),
+        total_count=len(all_entries),
+        reviewed_ids=reviewed_ids,
+        proposals_by_source=proposals_by_source,
+        show_reviewed=show_reviewed,
+    )
+
+
+@app.route("/flagged.json")
+def flagged_json():
+    """JSON dump of the review queue. For programmatic access."""
+    entries = flagging.read_log()
+    reviewed_ids = flagging.read_reviewed_ids()
+    return jsonify(
+        {
+            "count": len(entries),
+            "entries": entries,
+            "reviewed_ids": sorted(reviewed_ids),
+            "proposals": proposals.read_all(),
+        }
+    )
+
+
+@app.route("/flagged/<entry_id>/review", methods=["POST"])
+def flagged_review(entry_id: str):
+    """Mark a flagged entry as reviewed (moves it out of the active queue)."""
+    if not flagging.find_entry(entry_id):
+        return jsonify({"error": "entry not found"}), 404
+    flagging.mark_reviewed(entry_id)
+    return redirect(url_for("flagged_view"))
+
+
+@app.route("/flagged/<entry_id>/propose", methods=["POST"])
+def flagged_propose(entry_id: str):
+    """Attach a taxonomy-update proposal to a flagged entry."""
+    if not flagging.find_entry(entry_id):
+        return jsonify({"error": "entry not found"}), 404
+
+    form = request.form
+    try:
+        proposal_id = proposals.add(
+            source_flagged_id=entry_id,
+            kind=form.get("kind", ""),
+            suggested_id=form.get("suggested_id", ""),
+            suggested_label=form.get("suggested_label", ""),
+            suggested_keywords=form.get("suggested_keywords", ""),
+            rationale=form.get("rationale", ""),
+        )
+    except proposals.ProposalValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return redirect(url_for("flagged_view") + f"#flag-{entry_id}")
+
+
+@app.route("/proposals.json")
+def proposals_json():
+    """JSON dump of all taxonomy-update proposals."""
+    return jsonify({"proposals": proposals.read_all()})
 
 
 if __name__ == "__main__":
