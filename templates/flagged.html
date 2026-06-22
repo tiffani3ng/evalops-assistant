@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EvalOps — Flagged for Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .flagged-page { padding: 2rem 0; }
+    .flagged-empty { color: #888; padding: 2rem 0; }
+    .flag-entry {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      background: #fafafa;
+    }
+    .flag-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+    .flag-severity {
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .flag-severity.high   { background: #fde2e2; color: #a00; }
+    .flag-severity.medium { background: #fff1cc; color: #8a6500; }
+    .flag-severity.low    { background: #e2efff; color: #2459a8; }
+    .flag-timestamp { color: #888; font-size: 0.85rem; }
+    .flag-feedback {
+      font-style: italic;
+      margin: 0.5rem 0 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-left: 3px solid #999;
+      background: #fff;
+    }
+    .flag-reasons {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin: 0.25rem 0 0.5rem;
+    }
+    .flag-reason {
+      background: #efefef;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-family: monospace;
+    }
+    .flag-meta {
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .flag-meta strong { color: #222; }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <a class="nav-link" href="/">← Back</a>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="sources-page flagged-page">
+      <h1 class="sources-title">Flagged for Review</h1>
+      <p class="sources-subtitle">
+        Feedback that didn't fit cleanly into the existing taxonomy.
+        {% if count %}{{ count }} item{{ '' if count == 1 else 's' }} in the review queue.{% endif %}
+      </p>
+
+      {% if not entries %}
+        <p class="flagged-empty">No flagged feedback yet.</p>
+      {% else %}
+        {% for e in entries|reverse %}
+        <div class="flag-entry">
+          <div class="flag-header">
+            {% if e.flag.severity %}
+              <span class="flag-severity {{ e.flag.severity }}">{{ e.flag.severity }}</span>
+            {% endif %}
+            <span class="flag-timestamp">{{ e.timestamp }}</span>
+          </div>
+
+          <div class="flag-feedback">"{{ e.feedback }}"</div>
+
+          <div class="flag-reasons">
+            {% for r in e.flag.reasons %}
+              <span class="flag-reason">{{ r }}</span>
+            {% endfor %}
+          </div>
+
+          <div class="flag-meta">
+            <strong>Tasks identified:</strong>
+            {{ e.classification.task_labels|join(', ') if e.classification.task_labels else '(none)' }}
+            <br />
+            <strong>Problems identified:</strong>
+            {{ e.classification.problem_labels|join(', ') if e.classification.problem_labels else '(none)' }}
+            <br />
+            <strong>Metrics recommended:</strong>
+            {{ e.metric_ids|length }} ({{ e.metric_ids|join(', ') if e.metric_ids else 'none' }})
+            {% if e.model_context %}<br /><strong>Model context:</strong> {{ e.model_context }}{% endif %}
+            {% if e.stakeholder_context %}<br /><strong>Stakeholder:</strong> {{ e.stakeholder_context }}{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
