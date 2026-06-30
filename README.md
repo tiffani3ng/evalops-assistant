@@ -324,6 +324,84 @@ The current prototype shows that structured metric recommendation is possible, b
 
 ---
 
+## v0.2 Additions
+
+This fork extends the original prototype with a review-and-evolve loop, richer
+problem metadata, a repo-aware analysis endpoint, and a real test suite. See
+[`FLAGGED_FEEDBACK.md`](FLAGGED_FEEDBACK.md) for the full design notes.
+
+### Flag-for-review queue
+
+When the recommender's classification is weak (empty labels, thin metric
+bundle, low-detail summary, or the model self-reports low confidence), the
+feedback is appended to `flagged_feedback.jsonl` with the specific reason and
+a stable uuid id. Severity is computed from the reasons; the model's own
+confidence signal escalates uncertain cases to **high**.
+
+| Route | Purpose |
+|---|---|
+| `GET /flagged` | HTML review queue with severity badges and "show reviewed" toggle |
+| `GET /flagged/<id>` | Permalink view for a single entry (works even after it's marked reviewed) |
+| `GET /flagged.json` | Programmatic dump including the reviewed-id list |
+| `POST /flagged/<id>/review` | Mark an entry as reviewed |
+| `POST /flagged/<id>/propose` | Attach a taxonomy-update proposal to an entry |
+
+### Taxonomy update proposals + apply CLI
+
+Each flagged entry exposes a "Propose taxonomy update" form (kind, suggested
+id, label, keywords, tech_stack, nature, rationale). Proposals are
+append-only to `taxonomy_suggestions.jsonl`. The end-to-end loop is closed
+by `proposed_taxonomy.py`:
+
+```bash
+python proposed_taxonomy.py                       # writes proposed_taxonomy.md (markdown diff)
+python proposed_taxonomy.py --apply <proposal_id> # commit a proposal to the taxonomy
+python proposed_taxonomy.py --apply <id> --dry-run
+```
+
+`--apply` writes the new entry into `tasks.json` or `problems.json`, then
+marks the proposal as `merged` in the suggestion log. Refuses unknown ids,
+already-merged proposals, and id collisions.
+
+### Problem categorization (tech stack + nature)
+
+Each entry in `problems.json` now carries a `tech_stack` (`frontend`,
+`backend`, `model`, `infra`, `mixed`) and a `nature` (`bug`, `design`,
+`design+bug`). The `/analyze` response includes a
+`classification.problem_categorizations` array, and the output UI shows
+color-coded chips below the existing task/problem labels.
+
+### `/analyze-repo` — repo-aware classification
+
+`POST /analyze-repo` accepts `{feedback, repo_url}`, fetches a slice of the
+public GitHub repo (top-level files only, capped at 10 files × 5KB each),
+and asks the LLM where the issue likely originates. Returns
+`{candidates: [{path, rationale}], verdict, tech_stack, summary}`. In
+`DEV=true` mode returns a deterministic mock so the endpoint is exercisable
+without network or LLM credentials.
+
+### DEV mode
+
+Setting `DEV=true` in `.env` swaps every LLM call for a deterministic mock:
+keyword-based classification, canned bundle explanation, canned repo
+analysis. No API key required to boot or use the app — handy for tests,
+demos, and offline development.
+
+### Test suite
+
+`tests/` contains a pytest suite covering the flagging module, proposal
+storage, the apply CLI, repo URL parsing + analysis, and the Flask routes.
+Run it with:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/
+```
+
+65 tests as of this fork; all hermetic (no network, no LLM calls).
+
+---
+
 ## Limitations
 
 This project has several important limitations:
