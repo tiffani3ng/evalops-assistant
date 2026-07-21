@@ -62,16 +62,20 @@ CONCEPT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "llm":         ("llm", "language model", "gpt", "claude", "openai", "anthropic", "generative ai"),
     "hallucination": ("hallucin",),
     "weather":     ("weather", "temperature", "forecast", "climate"),
-    "notes":       ("note-taking", "note taking", "notes app"),
+    "notes":       ("note-taking", "note taking", "notes app", "my notes", "notes list", "new note"),
     "orders":      ("order", "orders api", "purchase"),
     "books":       ("book finder", "book catalog", "book search", "book library"),
-    "search":      ("search", "lookup", "find"),
+    # "lookup" and "find" removed — too broad, they fire on prose like
+    # "lookup table" and "find out" that don't imply a search feature.
+    "search":      ("search",),
     "latency":     ("slow", "laggy", "latency", "lag", "performance", "sluggish",
                     "delayed", "forever", "takes long", "long time", "hang", "hanging",
                     "unresponsive", "spins", "waiting", "freeze"),
     "frontend":    ("frontend", "front-end", "front end", "ui", "browser", "react", "vue"),
     "backend":     ("backend", "back-end", "back end", "server", "api endpoint"),
-    "database":    ("database", "sql", "query", "table"),
+    # "table" removed — matches prose like "lookup table" or "in the table
+    # below" that doesn't imply a database.
+    "database":    ("database", "sql", "postgres", "mysql", "sqlite"),
     "mobile":      ("mobile", "ios", "android"),
     "auth":        ("login", "auth", "sign in", "signup", "password"),
 }
@@ -113,14 +117,33 @@ def parse_repo_url(url: str) -> tuple[str, str]:
 
 # ── GitHub fetch helpers ──────────────────────────────────────────────────────
 
+def _github_headers(base: dict) -> dict:
+    """Attach a GitHub token when one is available in the environment.
+
+    Anonymous GitHub API calls are capped at 60/hour, which the toy-repo
+    evaluation harness burns through fast. Authenticated calls are capped
+    at 5,000/hour. Any of GITHUB_TOKEN / GH_TOKEN / GITHUB_API_TOKEN works
+    (the first-hit wins), which lines up with the gh CLI's env conventions.
+    """
+    for var in ("GITHUB_TOKEN", "GH_TOKEN", "GITHUB_API_TOKEN"):
+        token = os.getenv(var)
+        if token:
+            return {**base, "Authorization": f"Bearer {token}"}
+    return base
+
+
 def _fetch_json(url: str) -> object:
-    req = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
+    headers = _github_headers({"Accept": "application/vnd.github+json"})
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=GITHUB_TIMEOUT) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
 def _fetch_text(url: str, max_bytes: int) -> str:
-    req = urllib.request.Request(url)
+    # Raw content endpoints (raw.githubusercontent.com) don't need auth for
+    # public repos, but sending the header doesn't hurt.
+    headers = _github_headers({})
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=GITHUB_TIMEOUT) as resp:
         return resp.read(max_bytes + 1).decode("utf-8", errors="replace")[:max_bytes]
 
@@ -206,29 +229,23 @@ def _first_sentence(text: str) -> str:
 
 
 def _readme_intro(text: str) -> str:
-    """Return the meaningful intro of a README — title + tagline + first
-    content section. Stops before the second H2 header so we don't pick up
-    concepts from later sections (Ground truth / Test cases / Non-goals)
-    that name features by way of saying they are *absent*.
-
-    This is the fix for the "toy-wrong-domain thinks it has a chatbot"
-    class of failure: the README's `## Ground truth for the recommender`
-    section mentions chatbot/hallucination as things the recommender
-    should refuse to recommend for, and naive extraction over the whole
-    README treats them as things the repo *has*.
+    """Return only the README preamble — the title and everything up to the
+    FIRST H2 header. Deliberately excludes any body sections, because
+    body prose reliably references features by way of saying they are
+    *absent* (e.g. "There is no real LLM" → naive extraction thinks the
+    repo has an LLM). The tagline-and-title region is the most on-topic
+    part of a README and gives the highest signal-to-noise for concept
+    extraction.
     """
     if not text:
         return ""
     lines = text.splitlines()
-    h2_seen = 0
     kept: list[str] = []
     for line in lines:
         if line.startswith("## "):
-            h2_seen += 1
-            if h2_seen >= 2:
-                break
+            break
         kept.append(line)
-    return "\n".join(kept)[:3000]   # hard cap regardless
+    return "\n".join(kept)[:2000]   # hard cap regardless
 
 
 def check_feedback_matches(
@@ -290,36 +307,55 @@ def _dev_pick_candidates(
         return []
 
     scored: list[tuple[int, str, str]] = []
+
+    # Feedback signals we care about for scoring.
+    is_backend = "backend" in feedback_concepts
+    is_frontend = "frontend" in feedback_concepts
+    is_latency = "latency" in feedback_concepts
+    is_hallucination = bool(feedback_concepts & {"hallucination", "chatbot", "llm"})
+
     for f in files:
         name = f.get("name", "")
         low = name.lower()
         score = 0
         reasons: list[str] = []
 
-        if "backend" in feedback_concepts and any(m in low for m in ("server", "app.py", "main.py", "api")):
+        if is_backend and any(m in low for m in ("server", "app.py", "main.py", "api")):
             score += 3
-            reasons.append("looks like a backend entry point")
-        if "frontend" in feedback_concepts and any(m in low for m in ("app.js", "app.tsx", "index.html", "main.js")):
+            reasons.append("backend entry point")
+        if is_frontend and any(m in low for m in ("app.js", "app.tsx", "index.html", "main.js")):
             score += 3
-            reasons.append("looks like a frontend entry point")
-        if "latency" in feedback_concepts and low in ("server.js", "app.py", "app.js", "main.py"):
+            reasons.append("frontend entry point")
+        if is_latency and low in ("server.js", "app.py", "app.js", "main.py"):
             score += 2
             reasons.append("main handler is the typical latency location")
+        # For latency feedback without an explicit frontend / backend hint,
+        # prefer server-side files. In practice, unqualified "slow / laggy"
+        # complaints on a full-stack app usually resolve to a backend fix —
+        # network round-trip dominates render cost for typical requests.
+        if is_latency and not is_frontend and low in ("server.js", "app.py", "main.py"):
+            score += 1
+            reasons.append("ambiguous latency defaults to server-side")
+        if is_hallucination and low in ("app.js", "chat.js", "bot.js", "agent.js", "chatbot.js", "app.py"):
+            score += 3
+            reasons.append("chatbot/agent code — likely site of hallucination logic")
 
-        # Everyone gets a small baseline so we still return something for
-        # generic feedback.
-        if score == 0 and low in ("readme.md", "package.json", ".gitignore"):
-            continue  # skip non-code files at the tail
+        # Skip non-code files at the tail when unscored.
+        if score == 0 and low in ("readme.md", "package.json", ".gitignore", "license"):
+            continue
         if score == 0:
             score = 1
             reasons.append("candidate based on file position")
 
-        scored.append((score, name, "; ".join(reasons)))
+        # Tie-break: for equal scores, prefer files with .js / .py / .ts
+        # extensions over static assets — those are more likely to hold logic.
+        code_tie = 1 if low.endswith((".js", ".py", ".ts", ".tsx", ".jsx", ".go", ".rb", ".rs")) else 0
+        scored.append((score, code_tie, name, "; ".join(reasons)))
 
-    scored.sort(reverse=True)
+    scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
     return [
         {"path": name, "rationale": rationale}
-        for _score, name, rationale in scored[:3]
+        for _score, _code_tie, name, rationale in scored[:3]
     ]
 
 

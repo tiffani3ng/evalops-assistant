@@ -94,6 +94,28 @@ CASES: list[Case] = [
     Case("toy-wrong-domain",
          "the temperature it shows for Tokyo looks wrong",
          "matches"),
+
+    # ── toy-hallucination: 3 hallucination cases (should match) + 2 mismatch ─
+    # The point of this fifth toy: the analyzer should localize hallucination
+    # feedback to app.js (where the wrong-answer logic lives) AND correctly
+    # refuse when feedback is about latency / backend / other bug classes.
+    Case("toy-hallucination",
+         "the chatbot keeps giving wrong answers",
+         "matches", top_candidate="app.js"),
+    Case("toy-hallucination",
+         "the AI hallucinates and makes up facts",
+         "matches", top_candidate="app.js"),
+    Case("toy-hallucination",
+         "FactBot answers confidently but is often wrong",
+         "matches", top_candidate="app.js"),
+    # Mismatch: this app has no backend / no API — feedback about those
+    # should be flagged rather than force-fit into hallucination.
+    Case("toy-hallucination",
+         "the orders API is really slow to respond",
+         "mismatch", expect_mismatch_concept="orders"),
+    Case("toy-hallucination",
+         "loading my notes takes forever",
+         "mismatch", expect_mismatch_concept="notes"),
 ]
 
 
