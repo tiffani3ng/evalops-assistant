@@ -42,11 +42,28 @@ function renderResults(data) {
   const problemChips = (classification.problem_labels_human || [])
     .map(l => `<span class="label-chip problem">${l}</span>`).join("");
 
+  // Problem categorizations: unique tech_stack + nature across all classified problems
+  const cats = classification.problem_categorizations || [];
+  const uniqueStacks  = [...new Set(cats.map(c => c.tech_stack).filter(Boolean))];
+  const uniqueNatures = [...new Set(cats.map(c => c.nature).filter(Boolean))];
+  const stackChips = uniqueStacks
+    .map(s => `<span class="label-chip stack" data-stack="${s}">${s}</span>`).join("");
+  const natureChips = uniqueNatures
+    .map(n => `<span class="label-chip nature" data-nature="${n}">${n}</span>`).join("");
+
+  const categorizationRow = (stackChips || natureChips)
+    ? `<div class="categorization-row">
+        ${stackChips ? `<span class="categorization-label">Tech stack:</span>${stackChips}` : ""}
+        ${natureChips ? `<span class="categorization-label">Nature:</span>${natureChips}` : ""}
+      </div>`
+    : "";
+
   interpretation.innerHTML = `
     <p class="summary">${classification.summary || ""}</p>
     ${taskChips || problemChips
       ? `<div class="label-row">${taskChips}${problemChips}</div>`
       : ""}
+    ${categorizationRow}
   `;
 
   // Metric cards — built invisible, revealed via scheduleCardReveal()
