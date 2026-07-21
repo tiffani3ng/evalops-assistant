@@ -13,7 +13,7 @@ in the early-July meeting:
 
 ## What was built
 
-Four public test-fixture repos on `github.com/calvindeka/`:
+Five public test-fixture repos on `github.com/calvindeka/`:
 
 | Repo | Purpose | Bug |
 |---|---|---|
@@ -21,6 +21,7 @@ Four public test-fixture repos on `github.com/calvindeka/`:
 | [`toy-backend-latency`](https://github.com/calvindeka/toy-backend-latency) | Backend localization | 3 compound bugs in `server.js`: full table scan on every request, 10M-iter busy loop in per-record enrichment, per-record work multiplies |
 | [`toy-mixed-latency`](https://github.com/calvindeka/toy-mixed-latency) | Discriminating localization | Frontend `app.js` is deliberately **clean**; backend `server.js` has the same slowness pattern as toy-backend-latency. The user-visible symptom is identical whether frontend or backend is at fault. |
 | [`toy-wrong-domain`](https://github.com/calvindeka/toy-wrong-domain) | Feedback/repo consistency | No bugs, no AI, no chatbot, no LLM. Weather lookup on static data. Control fixture for the mismatch test. |
+| [`toy-hallucination`](https://github.com/calvindeka/toy-hallucination) | Hallucination bug class (Crouser's follow-up ask) | 2 bugs in `app.js`: `findWrongAnswer` looks up pre-canned wrong answers instead of consulting a source of truth; fallback path returns random confident wrong-answer templates instead of expressing uncertainty. |
 
 Each README documents the deliberate bug (or intentional absence of any
 bug) and the "ground truth" the recommender should return.
@@ -48,12 +49,35 @@ alongside the previous `candidates`/`verdict`/`tech_stack`/`summary`.
 The change lives on branch `feature/analyze-repo-reasoning` off
 `feature/hardening`.
 
-## Results — the 4×1 matrix
+## Results — the 5-toy × 3-5-variant matrix (18 cases total)
 
-Each test was run in DEV mode (no live LLM required — the reasoning layer
+All tests run in DEV mode (no live LLM required — the reasoning layer
 still fetches the real README from GitHub; only the code-localization
 call is mocked with a name heuristic). Live-mode structure is identical
-and delegates the classification to Claude.
+and delegates the classification to Claude. **Current pass rate: 18/18.**
+
+The matrix is codified in [`run_toy_matrix.py`](./run_toy_matrix.py) —
+run it any time to re-verify against the current state of the analyzer:
+
+```bash
+GITHUB_TOKEN=$(gh auth token) python flask_app.py     # in one terminal
+python run_toy_matrix.py                              # in another
+```
+
+Each case declares its expected outcome (`matches` + top candidate, or
+`mismatch` + expected concept in the reason). The script exits non-zero
+on any regression, so this can be a CI gate later.
+
+### Summary table
+
+| Repo | Cases | Pass |
+|---|---|---|
+| `toy-frontend-latency` | 3 (3 match) | 3/3 ✅ |
+| `toy-backend-latency` | 3 (3 match) | 3/3 ✅ |
+| `toy-mixed-latency` | 3 (3 match — must localize to `server.js` not `app.js`) | 3/3 ✅ |
+| `toy-wrong-domain` | 4 (3 mismatch + 1 legitimate weather match) | 4/4 ✅ |
+| `toy-hallucination` | 5 (3 hallucination match + 2 non-hallucination mismatch) | 5/5 ✅ |
+| **Total** | **18** | **18/18 ✅** |
 
 ### 1. Frontend feedback → frontend repo
 
@@ -137,6 +161,32 @@ returned generic latency hotspots. The refactored analyzer:
 Correct — the recommender refuses to guess and surfaces the specific
 mismatch. This is the exact behavior asked for in the meeting.
 
+### 5. Hallucination class — Crouser's explicit follow-up
+
+Crouser named this in the meeting: *"After latency, expand to
+hallucination — could use a model instructed to lie, or a
+known-hallucination-prone model, to test detection."* Built as
+`toy-hallucination`: a static chatbot ("FactBot") that answers factual
+questions with pre-canned wrong answers and, on out-of-distribution
+input, picks a random confident-sounding fake ("The answer is
+definitely yes, most experts agree.").
+
+Three hallucination-flavored feedbacks + two off-domain mismatch
+feedbacks. All five pass.
+
+| Feedback | Expected | Analyzer said |
+|---|---|---|
+| "the chatbot keeps giving wrong answers" | match → `app.js` | ✅ match → `app.js` |
+| "the AI hallucinates and makes up facts" | match → `app.js` | ✅ match → `app.js` |
+| "FactBot answers confidently but is often wrong" | match → `app.js` | ✅ match → `app.js` |
+| "the orders API is really slow to respond" | **mismatch** (no API) | ✅ mismatch, reason mentions `orders` |
+| "loading my notes takes forever" | **mismatch** (no notes) | ✅ mismatch, reason mentions `notes` |
+
+Same mismatch-detection story as `toy-wrong-domain`, but now applied to
+a repo that *does* have chatbot content — the analyzer needs to
+distinguish "off-domain because no orders/notes" from "on-domain
+because chatbot is present." Both directions work.
+
 ## Where the analyzer is still weak
 
 Honestly:
@@ -174,16 +224,24 @@ Honestly:
 
 ## Suggested next steps
 
-- **Widen the harness** to a 4×N matrix — multiple realistic feedback
-  variants per repo, including deliberately ambiguous phrasing.
 - **Fix the tech-stack heuristic** so `package.json` alone doesn't
   register as frontend.
-- **Extend to hallucination detection** as Crouser mentioned in the
-  meeting — a fifth toy that uses a model instructed to lie, feedback
-  about "the AI keeps making things up," and check that the recommender
-  points at the LLM boundary.
 - **Handle nested-repo files** (src/, app/, etc.) instead of only
-  top-level.
+  top-level. Right now the analyzer only looks at the root directory —
+  fine for the toys but real repos have structure.
+- **Live-mode Claude integration** — currently DEV mode uses keyword
+  heuristics for concept extraction and file scoring. Wiring in an
+  actual API key routes both through Claude, which should tighten
+  concept extraction (Claude handles negation, my keyword matcher
+  doesn't) and give richer candidate ranking (Claude can actually
+  read the code, not just look at filenames).
+- **Add the harness to CI** — `run_toy_matrix.py` already exits
+  non-zero on any failure. Wiring it into GitHub Actions catches
+  regressions on future analyzer changes for free.
+- **Move toward the agentic vision Crouser sketched** — take the
+  localization result and propose concrete tests to confirm the bug
+  (e.g. "run the API 100 times, measure p95 latency"), then offer to
+  run them.
 
 ## How to reproduce
 
@@ -191,9 +249,20 @@ Honestly:
 cd /Users/calvindeka/EvalOps/evalops-metric-assistant
 git checkout feature/analyze-repo-reasoning
 source .venv/bin/activate
-python -m pytest tests/                       # should show 76 passing
-python flask_app.py                            # DEV mode, no key needed
-# then in another terminal:
+
+python -m pytest tests/                        # should show 76 passing
+
+# start the server with an authenticated GitHub token (avoids the 60/hr
+# unauth rate limit — gh CLI's token bumps this to 5000/hr)
+GITHUB_TOKEN=$(gh auth token) python flask_app.py
+
+# in another terminal:
+python run_toy_matrix.py                       # should show 18/18 passed
+```
+
+Or for a single-case sanity check:
+
+```bash
 curl -s -X POST http://localhost:8080/analyze-repo \
   -H "Content-Type: application/json" \
   -d '{"feedback":"the chatbot keeps hallucinating","repo_url":"https://github.com/calvindeka/toy-wrong-domain"}' \
